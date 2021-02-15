@@ -83,7 +83,7 @@ func ProviderGetById(id int64) (Provider, error) {
 	return provider, nil
 }
 
-func ProviderGetRawEntries(id int64) (*gofeed.Feed, error) {
+func ProviderGetFreshEntries(id int64) (*gofeed.Feed, error) {
 	stmt, err := DB.Prepare("SELECT url FROM providers WHERE id = ?")
 	defer stmt.Close()
 	if err != nil {
@@ -107,10 +107,9 @@ func ProviderGetRawEntries(id int64) (*gofeed.Feed, error) {
 	return feed, nil
 }
 
-
 func ProviderRefreshEntriesForDB(id int64) error {
 	fmt.Println("Updating provider #" + strconv.FormatInt(id, 10))
-	rawEntries, err := ProviderGetRawEntries(id)
+	rawEntries, err := ProviderGetFreshEntries(id)
 	if err != nil {
 		return err
 	}
@@ -153,4 +152,13 @@ func ProviderRefreshEntriesForDB(id int64) error {
 
 	fmt.Println("Finished updating provider #" + strconv.FormatInt(id, 10))
 	return nil
+}
+
+func ProviderGetDBEntries(providerId int64, limit int) (*[]Entry, error){
+	entries := []Entry{}
+	err := DB.Select(&entries, "SELECT * FROM entries WHERE provider_id=$1 LIMIT $2", providerId, limit)
+	if err != nil {
+		return nil, err
+	}
+	return &entries, nil
 }

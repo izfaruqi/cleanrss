@@ -60,11 +60,21 @@ func providerRoutes(server *fiber.App){
 		if err != nil {
 			return ErrorResponseFactory(400, "MALFORMED_REQUEST", err, c)
 		}
-		feed, err := ProviderGetRawEntries(idInt64)
+
+		var entries *[]Entry
+		if(c.Query("fresh", "0") == "1"){
+			err = ProviderRefreshEntriesForDB(idInt64)
+			if err != nil {
+				return ErrorResponseFactory(500, "INTERNAL_ERROR", err, c)
+			}
+		}
+
+		entries, err = ProviderGetDBEntries(idInt64, 20)
 		if err != nil {
 			return ErrorResponseFactory(500, "INTERNAL_ERROR", err, c)
 		}
-		return c.JSON(feed)
+		
+		return c.JSON(entries)
 	})
 
 	server.Get("/provider/:id/refresh", func(c *fiber.Ctx) error {
