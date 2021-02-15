@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -12,9 +14,10 @@ type ErrorResponse struct {
 var Server *fiber.App
 
 func ServerInit(){
-	Server = fiber.New()
+	Server = fiber.New(fiber.Config{DisableStartupMessage: true})
 	RoutesInit(Server)
-	Server.Listen(":1337")
+	log.Println("Server will listen on http://localhost:1337")
+	Server.Listen("localhost:1337")
 }
 
 func ErrorResponseFactory(httpCode int, errCode string, err error, c *fiber.Ctx) error {

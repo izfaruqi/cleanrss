@@ -66,4 +66,14 @@ func providerRoutes(server *fiber.App){
 		}
 		return c.JSON(feed)
 	})
+
+	server.Get("/provider/:id/refresh", func(c *fiber.Ctx) error {
+		idInt64, err := strconv.ParseInt(c.Params("id"), 10, 64)
+		if err != nil {
+			return ErrorResponseFactory(400, "MALFORMED_REQUEST", err, c)
+		}
+		ProviderRefreshEntriesForDB(idInt64)
+		
+		return c.JSON(1)
+	})
 }

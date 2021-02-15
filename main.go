@@ -8,7 +8,10 @@ func main(){
 	log.Println("CleanRSS Server starting...")
 	DBInit()
 	InitFeedParser()
-	ServerInit()
+	InitEntryUpdater()
 
+	defer StopEntryUpdater()
 	defer DB.Close()
+
+	ServerInit()
 }

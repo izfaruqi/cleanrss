@@ -1,7 +1,12 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/mmcdole/gofeed"
 	"github.com/valyala/fasthttp"
@@ -14,13 +19,14 @@ type Provider struct {
 }
 
 type Entry struct {
-	Id int `json:"id"`
-	ProviderId int `json:"providerId"`
-	Url string `json:"url"`
-	Title string `json:"title"`
-	PublishedAt string `json:"publishedAt"`
-	Author string `json:"author"`
-	FetchedAt string `json:"fetchedAt"`
+	Id int64 `json:"id" db:"id"`
+	ProviderId int64 `json:"providerId" db:"provider_id"`
+	Url string `json:"url" db:"url"`
+	Title string `json:"title" db:"title"`
+	PublishedAt int64 `json:"publishedAt" db:"published_at"`
+	Author string `json:"author" db:"author"`
+	FetchedAt int64 `json:"fetchedAt" db:"fetched_at"`
+	Json string `json:"json" db:"json"`
 }
 
 var feedParser *gofeed.Parser
@@ -99,4 +105,52 @@ func ProviderGetRawEntries(id int64) (*gofeed.Feed, error) {
 		return nil, err
 	}
 	return feed, nil
+}
+
+
+func ProviderRefreshEntriesForDB(id int64) error {
+	fmt.Println("Updating provider #" + strconv.FormatInt(id, 10))
+	rawEntries, err := ProviderGetRawEntries(id)
+	if err != nil {
+		return err
+	}
+
+	previousEntries := []Entry{}
+	err = DB.Select(&previousEntries, "SELECT id, url FROM entries WHERE provider_id=$1 LIMIT $2", id, rawEntries.Len())
+	if err != nil {
+		return err
+	}
+
+	toInsert := make([]Entry, 0, rawEntries.Len())
+	timestampNow := time.Now().Unix()
+
+	for _, item := range rawEntries.Items {
+		isUpdate := false
+		jsonItem, err := json.Marshal(item)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		for _, prev := range previousEntries {
+			if prev.Url == item.Link {
+				_, err := DB.NamedExec("UPDATE entries SET url = :url, title = :title, published_at = :published_at, author = :author, fetched_at = :fetched_at, json = :json WHERE id = :id", Entry{prev.Id, id, item.Link, item.Title, item.PublishedParsed.Unix(), item.Author.Name, timestampNow, string(jsonItem)})
+				if err != nil {
+					return err
+				}
+				isUpdate = true
+				break
+			}
+		}
+		if !isUpdate {
+			toInsert = append(toInsert, Entry{-1, id, item.Link, item.Title, item.PublishedParsed.Unix(), item.Author.Name, timestampNow, string(jsonItem)})
+		}
+	}
+	if len(toInsert) > 0 {
+		_, err := DB.NamedExec("INSERT INTO entries (provider_id, url, title, published_at, author, fetched_at, json) VALUES (:provider_id, :url, :title, :published_at, :author, :fetched_at, :json)", toInsert)
+		if err != nil {
+			return err
+		}
+	}
+
+	fmt.Println("Finished updating provider #" + strconv.FormatInt(id, 10))
+	return nil
 }
