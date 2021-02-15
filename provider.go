@@ -109,13 +109,14 @@ func ProviderGetFreshEntries(id int64) (*gofeed.Feed, error) {
 
 func ProviderRefreshEntriesForDB(id int64) error {
 	fmt.Println("Updating provider #" + strconv.FormatInt(id, 10))
+
 	rawEntries, err := ProviderGetFreshEntries(id)
 	if err != nil {
 		return err
 	}
 
 	previousEntries := []Entry{}
-	err = DB.Select(&previousEntries, "SELECT id, url FROM entries WHERE provider_id=$1 LIMIT $2", id, rawEntries.Len())
+	err = DB.Select(&previousEntries, "SELECT id, url FROM entries WHERE provider_id=$1 ORDER BY published_at DESC LIMIT $2", id, rawEntries.Len())
 	if err != nil {
 		return err
 	}
@@ -131,6 +132,7 @@ func ProviderRefreshEntriesForDB(id int64) error {
 		}
 		for _, prev := range previousEntries {
 			if prev.Url == item.Link {
+				log.Println("UPDATE" + item.Title)
 				_, err := DB.NamedExec("UPDATE entries SET url = :url, title = :title, published_at = :published_at, author = :author, fetched_at = :fetched_at, json = :json WHERE id = :id", Entry{prev.Id, id, item.Link, item.Title, item.PublishedParsed.Unix(), item.Author.Name, timestampNow, string(jsonItem)})
 				if err != nil {
 					return err
@@ -156,7 +158,7 @@ func ProviderRefreshEntriesForDB(id int64) error {
 
 func ProviderGetDBEntries(providerId int64, limit int) (*[]Entry, error){
 	entries := []Entry{}
-	err := DB.Select(&entries, "SELECT * FROM entries WHERE provider_id=$1 LIMIT $2", providerId, limit)
+	err := DB.Select(&entries, "SELECT * FROM entries WHERE provider_id=$1 ORDER BY published_at DESC LIMIT $2", providerId, limit)
 	if err != nil {
 		return nil, err
 	}
