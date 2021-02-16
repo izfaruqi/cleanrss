@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 )
 
 type ErrorResponse struct {
@@ -15,6 +16,9 @@ var Server *fiber.App
 
 func ServerInit(){
 	Server = fiber.New(fiber.Config{DisableStartupMessage: true})
+	Server.Use(cors.New(cors.Config{
+		AllowOrigins: "*",
+	}))
 	RoutesInit(Server)
 	log.Println("Server will listen on http://localhost:1337")
 	Server.Listen("localhost:1337")
