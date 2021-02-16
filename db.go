@@ -11,12 +11,6 @@ var DB *sqlx.DB
 
 var schema string = 
 `BEGIN TRANSACTION;
-CREATE TABLE IF NOT EXISTS "providers" (
-	"id"	INTEGER,
-	"name"	TEXT,
-	"url"	TEXT,
-	PRIMARY KEY("id" AUTOINCREMENT)
-);
 CREATE TABLE IF NOT EXISTS "entries" (
 	"id"	INTEGER,
 	"provider_id"	INTEGER,
@@ -26,6 +20,18 @@ CREATE TABLE IF NOT EXISTS "entries" (
 	"author"	TEXT,
 	"fetched_at"	INTEGER,
 	"json"	TEXT,
+	PRIMARY KEY("id" AUTOINCREMENT)
+);
+CREATE TABLE IF NOT EXISTS "parsers" (
+	"id"	INTEGER,
+	"rules_json"	TEXT,
+	PRIMARY KEY("id" AUTOINCREMENT)
+);
+CREATE TABLE IF NOT EXISTS "providers" (
+	"id"	INTEGER,
+	"name"	TEXT,
+	"url"	TEXT,
+	"parser_id"	TEXT,
 	PRIMARY KEY("id" AUTOINCREMENT)
 );
 COMMIT;
