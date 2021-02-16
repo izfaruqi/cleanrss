@@ -9,6 +9,10 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
+type Parser struct {
+	Id int64 `json:"id" db:"id"`
+	RulesJson string `json:"rulesJson" db:"rules_json"`
+}
 
 func GetCleanPage(entryId int64) string {
 	rows, err := DB.Queryx("SELECT entries.url, parsers.rules_json FROM entries LEFT JOIN providers ON entries.provider_id = providers.id LEFT JOIN parsers ON providers.parser_id = parsers.id WHERE entries.id = $1 LIMIT 1", entryId)
