@@ -13,7 +13,15 @@ func RoutesInit(server *fiber.App) {
 		return c.JSON(versionInfo)
 	})
 
+	server.Get("/shutdown", func(c *fiber.Ctx) error { 
+		defer func (){
+			_ = server.Shutdown()
+		}()
+		return c.SendStatus(200)
+	})
+
 	providerRoutes(server)
+	cleanerRoutes(server)
 }
 
 func providerRoutes(server *fiber.App){
@@ -73,7 +81,7 @@ func providerRoutes(server *fiber.App){
 		if err != nil {
 			return ErrorResponseFactory(500, "INTERNAL_ERROR", err, c)
 		}
-		
+
 		return c.JSON(entries)
 	})
 
@@ -85,5 +93,16 @@ func providerRoutes(server *fiber.App){
 		ProviderRefreshEntriesForDB(idInt64)
 		
 		return c.JSON(1)
+	})
+}
+
+func cleanerRoutes(server *fiber.App){
+	server.Get("/cleaner/:id", func(c *fiber.Ctx) error {
+		idInt64, err := strconv.ParseInt(c.Params("id"), 10, 64)
+		if err != nil {
+			return ErrorResponseFactory(400, "MALFORMED_REQUEST", err, c)
+		}
+		c.Set("Content-Type", "text/html; charset=utf-8")
+		return c.Send([]byte(GetCleanPage(idInt64)))
 	})
 }

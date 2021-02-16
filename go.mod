@@ -3,6 +3,7 @@ module github.com/izfaruqi/cleanrss
 go 1.15
 
 require (
+	github.com/PuerkitoBio/goquery v1.6.1
 	github.com/gofiber/fiber/v2 v2.5.0
 	github.com/jmoiron/sqlx v1.3.1
 	github.com/mattn/go-sqlite3 v1.14.6
