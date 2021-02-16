@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -13,9 +12,10 @@ import (
 )
 
 type Provider struct {
-	Id   int    `json:"id"`
+	Id   int64    `json:"id"`
 	Name string `json:"name"`
 	Url  string `json:"url"`
+	ParserId int64 `json:"parser_id"`
 }
 
 type Entry struct {
@@ -128,11 +128,10 @@ func ProviderRefreshEntriesForDB(id int64) error {
 		isUpdate := false
 		jsonItem, err := json.Marshal(item)
 		if err != nil {
-			log.Fatalln(err)
+			return err
 		}
 		for _, prev := range previousEntries {
 			if prev.Url == item.Link {
-				log.Println("UPDATE" + item.Title)
 				_, err := DB.NamedExec("UPDATE entries SET url = :url, title = :title, published_at = :published_at, author = :author, fetched_at = :fetched_at, json = :json WHERE id = :id", Entry{prev.Id, id, item.Link, item.Title, item.PublishedParsed.Unix(), item.Author.Name, timestampNow, string(jsonItem)})
 				if err != nil {
 					return err
