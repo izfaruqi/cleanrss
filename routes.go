@@ -77,7 +77,7 @@ func providerRoutes(server *fiber.App){
 			}
 		}
 
-		entries, err = ProviderGetDBEntries(idInt64, 20)
+		entries, err = ProviderGetDBEntries(idInt64, 40)
 		if err != nil {
 			return ErrorResponseFactory(500, "INTERNAL_ERROR", err, c)
 		}
