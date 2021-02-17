@@ -3,7 +3,9 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"log"
+	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/valyala/fasthttp"
@@ -23,30 +25,47 @@ func GetCleanPage(entryId int64) string {
 	cols, _ := rows.SliceScan()
 	url := cols[0].(string)
 	var parserJson interface{}
-	err = json.Unmarshal([]byte(cols[1].(string)), &parserJson)
-	cleanedPage := parsePage(url, parserJson.(map[string]interface{}))
-	return cleanedPage
+	if cols[1] != nil {
+		err = json.Unmarshal([]byte(cols[1].(string)), &parserJson)
+		cleanedPage := parsePage(url, parserJson.(map[string]interface{}))
+		return cleanedPage
+	} else {
+		buf := new(strings.Builder)
+		io.Copy(buf, getPage(url, true))
+		return buf.String()
+	}
+}
+
+func getPage(url string, useMobileUA bool) *bytes.Reader {
+	req := fasthttp.AcquireRequest()
+	res := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseRequest(req)
+	defer fasthttp.ReleaseResponse(res)
+	req.SetRequestURI(url)
+	if useMobileUA {
+		req.Header.Set("User-Agent", "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Mobile Safari/537.36")
+	} else {
+		req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36")
+	}
+	fasthttpClient.DoRedirects(req, res, 20)
+	return bytes.NewReader(res.Body())
 }
 
 func parsePage(url string, parserJson map[string]interface{}) string {
 	requestRules := parserJson["request"].(map[string]interface{})
 	htmlRules := parserJson["html"].(map[string]interface{})
 
-	req := fasthttp.AcquireRequest()
-	res := fasthttp.AcquireResponse()
-	defer fasthttp.ReleaseRequest(req)
-	defer fasthttp.ReleaseResponse(res)
-	req.SetRequestURI(url)
+	var pageBodyReader *bytes.Reader
+
 	if requestRules["mobileUA"] != nil {
 		if requestRules["mobileUA"].(bool) {
-			req.Header.Set("User-Agent", "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Mobile Safari/537.36")
+			pageBodyReader = getPage(url, true)
 		}
 	} else {
-		req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36")
+		pageBodyReader = getPage(url, false)
 	}
-	fasthttpClient.DoRedirects(req, res, 20)
 	
-	doc, err := goquery.NewDocumentFromReader(bytes.NewReader(res.Body()))
+	doc, err := goquery.NewDocumentFromReader(pageBodyReader)
 	if err != nil {
 
 	}

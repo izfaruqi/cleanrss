@@ -15,7 +15,7 @@ type Provider struct {
 	Id   int64    `json:"id"`
 	Name string `json:"name"`
 	Url  string `json:"url"`
-	ParserId int64 `json:"parser_id"`
+	ParserId int64 `json:"parserId"`
 }
 
 type Entry struct {
