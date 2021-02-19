@@ -12,10 +12,10 @@ import (
 )
 
 type Provider struct {
-	Id   int64    `json:"id"`
-	Name string `json:"name"`
-	Url  string `json:"url"`
-	ParserId int64 `json:"parserId"`
+	Id   int64    `json:"id" db:"id"`
+	Name string `json:"name" db:"name"`
+	Url  string `json:"url" db:"url"`
+	ParserId int64 `json:"parserId" db:"parser_id"`
 }
 
 type Entry struct {
@@ -38,47 +38,31 @@ func InitFeedParser() {
 }
 
 func ProviderInsert(provider *Provider) (int64, error) {
-	stmt, err := DB.Prepare("INSERT INTO providers ('name', 'url') VALUES (?, ?)")
-	defer stmt.Close()
+	res, err := DB.NamedExec("INSERT INTO providers ('name', 'url', 'parser_id') VALUES (:name, :url, :parser_id)", provider)
 	if err != nil {
 		return -1, err
 	}
-	op, err := stmt.Exec(provider.Name, provider.Url)
+	id, err := res.LastInsertId()
 	if err != nil {
-		return -1, err
+		return -1, nil
 	}
-	id, err := op.LastInsertId()
 	return id, nil
 }
 
 func ProviderGetAll() ([]Provider, error) {
-	rows, err := DB.Query("SELECT id, name, url FROM providers")
+	providers := []Provider{}
+	err := DB.Select(&providers, "SELECT * FROM providers")
 	if err != nil {
 		return nil, err
-	}
-	defer rows.Close()
-	var providers []Provider
-	for rows.Next() {
-		var provider Provider
-		err = rows.Scan(&provider.Id, &provider.Name, &provider.Url)
-		if err != nil {
-			return nil, err
-		}
-		providers = append(providers, provider)
 	}
 	return providers, nil
 }
 
 func ProviderGetById(id int64) (Provider, error) {
-	stmt, err := DB.Prepare("SELECT id, name, url FROM providers WHERE id = ?")
-	defer stmt.Close()
+	provider := Provider{}
+	err := DB.Get(&provider, "SELECT * FROM providers WHERE id = $1", id)
 	if err != nil {
-		return Provider{}, err
-	}
-	var provider Provider
-	err = stmt.QueryRow(id).Scan(&provider.Id, &provider.Name, &provider.Url)
-	if err != nil {
-		return Provider{}, err
+		return provider, err
 	}
 	return provider, nil
 }
