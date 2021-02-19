@@ -105,4 +105,12 @@ func cleanerRoutes(server *fiber.App){
 		c.Set("Content-Type", "text/html; charset=utf-8")
 		return c.Send([]byte(GetCleanPage(idInt64)))
 	})
+
+	server.Get("/cleaner", func(c *fiber.Ctx) error {
+		parsers, err := GetAllParsers()
+		if err != nil {
+			return ErrorResponseFactory(404, "NOT_FOUND", err, c)
+		}
+		return c.JSON(parsers)
+	})
 }

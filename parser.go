@@ -13,7 +13,17 @@ import (
 
 type Parser struct {
 	Id int64 `json:"id" db:"id"`
+	Name string `json:"name" db:"name"`
 	RulesJson string `json:"rulesJson" db:"rules_json"`
+}
+
+func GetAllParsers() ([]Parser, error) {
+	parsers := []Parser{}
+	err := DB.Select(&parsers, "SELECT * FROM parsers")
+	if err != nil {
+		return nil, err
+	}
+	return parsers, nil
 }
 
 func GetCleanPage(entryId int64) string {
@@ -91,3 +101,4 @@ func parsePage(url string, parserJson map[string]interface{}) string {
 	outStr, _ := goquery.OuterHtml(rootNode)
 	return outStr
 }
+
