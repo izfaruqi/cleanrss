@@ -13,6 +13,10 @@ func RoutesInit(server *fiber.App) {
 		return c.JSON(versionInfo)
 	})
 
+	server.Get("/ping", func(c *fiber.Ctx) error {
+		return c.SendStatus(200)
+	})
+
 	server.Get("/shutdown", func(c *fiber.Ctx) error { 
 		defer func (){
 			_ = server.Shutdown()
