@@ -113,4 +113,17 @@ func cleanerRoutes(server *fiber.App){
 		}
 		return c.JSON(parsers)
 	})
+
+	server.Post("/cleaner", func(c *fiber.Ctx) error {
+		parser := new(Parser)
+		err := c.BodyParser(parser)
+		if err != nil {
+			return ErrorResponseFactory(400, "JSON_INVALID", err, c)
+		}
+		id, err := ParserInsert(parser)
+		if err != nil {
+			return ErrorResponseFactory(500, "SQL_ERROR", err, c)
+		}
+		return c.JSON(map[string]int64 { "id": id })
+	})
 }

@@ -26,6 +26,18 @@ func GetAllParsers() ([]Parser, error) {
 	return parsers, nil
 }
 
+func ParserInsert(parser *Parser) (int64, error) {
+	res, err := DB.NamedExec("INSERT INTO parsers (name, rules_json) VALUES (:name, :rules_json)", parser)
+	if err != nil {
+		return -1, err
+	}
+	insertedId, err := res.LastInsertId()
+	if err != nil {
+		return -1, err
+	}
+	return insertedId, nil
+}
+
 func GetCleanPage(entryId int64) string {
 	rows, err := DB.Queryx("SELECT entries.url, parsers.rules_json FROM entries LEFT JOIN providers ON entries.provider_id = providers.id LEFT JOIN parsers ON providers.parser_id = parsers.id WHERE entries.id = $1 LIMIT 1", entryId)
 	if err != nil {
