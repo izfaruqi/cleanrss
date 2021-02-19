@@ -22,16 +22,17 @@ CREATE TABLE IF NOT EXISTS "entries" (
 	"json"	TEXT,
 	PRIMARY KEY("id" AUTOINCREMENT)
 );
-CREATE TABLE IF NOT EXISTS "parsers" (
-	"id"	INTEGER,
-	"rules_json"	TEXT,
-	PRIMARY KEY("id" AUTOINCREMENT)
-);
 CREATE TABLE IF NOT EXISTS "providers" (
 	"id"	INTEGER,
 	"name"	TEXT,
 	"url"	TEXT,
 	"parser_id"	TEXT,
+	PRIMARY KEY("id" AUTOINCREMENT)
+);
+CREATE TABLE IF NOT EXISTS "parsers" (
+	"id"	INTEGER,
+	"rules_json"	TEXT,
+	"name"	TEXT,
 	PRIMARY KEY("id" AUTOINCREMENT)
 );
 COMMIT;
