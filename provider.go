@@ -49,6 +49,18 @@ func ProviderInsert(provider *Provider) (int64, error) {
 	return id, nil
 }
 
+func ProviderUpdate(provider *Provider) (error) {
+	res, err := DB.NamedExec("UPDATE providers SET name = :name, url = :url, parser_id = :parser_id WHERE id = :id", provider)
+	if err != nil {
+		return err
+	}
+	_, err = res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func ProviderGetAll() ([]Provider, error) {
 	providers := []Provider{}
 	err := DB.Select(&providers, "SELECT * FROM providers")
