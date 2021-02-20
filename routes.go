@@ -128,6 +128,24 @@ func cleanerRoutes(server *fiber.App){
 		return c.Send([]byte(GetCleanPage(idInt64)))
 	})
 
+	server.Put("/cleaner/:id", func(c *fiber.Ctx) error {
+		idInt64, err := strconv.ParseInt(c.Params("id"), 10, 64)
+		if err != nil {
+			return ErrorResponseFactory(400, "MALFORMED_REQUEST", err, c)
+		}
+		parser := new(Parser)
+		err = c.BodyParser(parser)
+		if err != nil {
+			return ErrorResponseFactory(400, "JSON_INVALID", err, c)
+		}
+		parser.Id = idInt64
+		err = ParserUpdate(parser)
+		if err != nil {
+			return ErrorResponseFactory(500, "SQL_ERROR", err, c)
+		}
+		return c.SendStatus(200)
+	})
+
 	server.Get("/cleaner", func(c *fiber.Ctx) error {
 		parsers, err := GetAllParsers()
 		if err != nil {

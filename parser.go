@@ -38,6 +38,18 @@ func ParserInsert(parser *Parser) (int64, error) {
 	return insertedId, nil
 }
 
+func ParserUpdate(parser *Parser) error {
+	res, err := DB.NamedExec("UPDATE parsers SET name = :name, rules_json = :rules_json WHERE id = :id", parser)
+	if err != nil {
+		return err
+	}
+	_, err = res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func GetCleanPage(entryId int64) string {
 	rows, err := DB.Queryx("SELECT entries.url, parsers.rules_json FROM entries LEFT JOIN providers ON entries.provider_id = providers.id LEFT JOIN parsers ON providers.parser_id = parsers.id WHERE entries.id = $1 LIMIT 1", entryId)
 	if err != nil {
