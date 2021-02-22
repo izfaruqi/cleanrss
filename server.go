@@ -27,9 +27,11 @@ func ServerInit(){
 	Server.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
 	}))
-	//RoutesInit(Server)
+	
 	ServeStatic()
-	routes.RoutesInit(Server)
+	apiGroup := Server.Group("/api")
+	routes.RoutesInit(apiGroup)
+
 	log.Println("Server will listen on http://localhost:1337")
 	Server.Listen("localhost:1337")
 }
