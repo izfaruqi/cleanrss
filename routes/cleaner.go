@@ -1,8 +1,9 @@
 package routes
 
 import (
+	"cleanrss/controllers"
+
 	"github.com/gofiber/fiber/v2"
-	"github.com/izfaruqi/cleanrss/controllers"
 )
 
 func cleanerRouter(router fiber.Router){

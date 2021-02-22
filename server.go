@@ -6,10 +6,11 @@ import (
 	"log"
 	"net/http"
 
+	"cleanrss/routes"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/filesystem"
-	"github.com/izfaruqi/cleanrss/routes"
 )
 
 type ErrorResponse struct {
@@ -27,7 +28,7 @@ func ServerInit(){
 	Server.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
 	}))
-	
+
 	ServeStatic()
 	apiGroup := Server.Group("/api")
 	routes.RoutesInit(apiGroup)

@@ -1,8 +1,14 @@
 package routes
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"cleanrss/controllers"
+
+	"github.com/gofiber/fiber/v2"
+)
+
 
 func RoutesInit(router fiber.Router){
+	controllers.ValidatorInit()
 	router.Get("/", func(c *fiber.Ctx) error {
 		c.Status(200)
 		return c.JSON(map[string]string{"version": "0.1.0"})

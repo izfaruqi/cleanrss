@@ -2,16 +2,18 @@ package main
 
 import (
 	"log"
+
+	"cleanrss/utils"
 )
 
 func main(){
 	log.Println("CleanRSS Server starting...")
-	DBInit()
-	InitFeedParser()
-	InitEntryUpdater()
+	utils.DBInit()
+	//InitFeedParser()
+	//InitEntryUpdater()
 
-	defer StopEntryUpdater()
-	defer DB.Close()
+	//defer StopEntryUpdater()
+	defer utils.DB.Close()
 
 	ServerInit()
 }
