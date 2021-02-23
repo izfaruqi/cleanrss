@@ -10,8 +10,9 @@ func main(){
 	log.Println("CleanRSS Server starting...")
 	utils.DBInit()
 	utils.HttpClientInit()
-	
-	defer utils.DB.Close()
 
+	defer utils.DB.Close()
+	defer log.Println("CleanRSS Server shutting down...")
+	
 	ServerInit()
 }
