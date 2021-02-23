@@ -96,3 +96,16 @@ func CleanerDelete(c *fiber.Ctx) error {
 	}
 	return c.JSON(map[string]bool{"success": true})
 }
+
+func CleanerGetPageByEntryId(c *fiber.Ctx) error {
+	id, err := strconv.ParseInt(c.Params("entryId"), 10, 64)
+	if err != nil {
+		return c.Status(400).JSON("ID is invalid.")
+	}
+	page, err := models.CleanerGetPage(id)
+	if err != nil {
+		return c.Status(500).JSON(err.Error())
+	}
+	c.Set("Content-Type", "text/html; charset=utf-8")
+	return c.Status(200).SendString(page)
+}

@@ -16,4 +16,6 @@ func cleanerRouter(router fiber.Router){
 	router.Post("/:id", controllers.CleanerUpdate)
 	
 	router.Delete("/:id", controllers.CleanerDelete)
+
+	router.Get("/entry/:entryId", controllers.CleanerGetPageByEntryId)
 }
