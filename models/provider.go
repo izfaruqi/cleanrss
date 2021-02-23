@@ -52,7 +52,7 @@ func ProviderUpdate(provider *Provider) (int64, error) {
 	if provider == nil {
 		return -1, errors.New("Parameter is null")
 	}
-	res, err := utils.DB.NamedExec("UPDATE cleaners SET name = :name, url = :url, parser_id = :parser_id WHERE id = :id AND is_deleted = 0", provider)
+	res, err := utils.DB.NamedExec("UPDATE providers SET name = :name, url = :url, parser_id = :parser_id WHERE id = :id AND is_deleted = 0", provider)
 	if err != nil {
 		return -1, err
 	}
