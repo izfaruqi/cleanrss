@@ -9,10 +9,8 @@ import (
 func main(){
 	log.Println("CleanRSS Server starting...")
 	utils.DBInit()
-	//InitFeedParser()
-	//InitEntryUpdater()
-
-	//defer StopEntryUpdater()
+	utils.HttpClientInit()
+	
 	defer utils.DB.Close()
 
 	ServerInit()

@@ -57,7 +57,7 @@ func CleanerUpdate(c *fiber.Ctx) error {
 		return c.Status(400).JSON("ID is invalid.")
 	}
 	if id == 0 {
-		return c.Status(403).JSON("Default cleaner cannot be deleted.")
+		return c.Status(403).JSON("Default cleaner cannot be edited.")
 	}
 	cleaner := new(models.Cleaner)
 	err = c.BodyParser(cleaner)
