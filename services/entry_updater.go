@@ -17,11 +17,12 @@ func EntryUpdaterInit(){
 		entryUpdateTimer.Stop()
 	}
 	entryUpdateTimer = cron.New()
-	entryUpdateTimer.AddFunc("0 15 * * * *", refreshEntriesFromProviders)
+	entryUpdateTimer.AddFunc("0 30 * * * *", refreshEntriesFromProviders)
 	entryUpdateTimer.Start()
 }
 
 func refreshEntriesFromProviders() {
+	log.Println("Updating entries...")
 	providerIds := refreshEntryUpdaterProviders()
 	for _, providerId := range providerIds {
 		go launchEntryDBRefresh(providerId)

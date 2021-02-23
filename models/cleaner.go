@@ -120,9 +120,16 @@ func cleanPage(url string, parserJson map[string]interface{}) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
-	rootNode := doc.Find(htmlRules["root"].(string)).First()
 
+	var rootNode *goquery.Selection
+	rootRules := htmlRules["root"].([]interface{})
+	for _, rootRule := range rootRules {
+		rootNode = doc.Find(rootRule.(string)).First()
+		if rootNode.Length() != 0 {
+			break
+		}
+	}
+	
 	if htmlRules["noscript"] != nil {
 		if htmlRules["noscript"].(bool) {
 			doc.Find("noscript").Each(func(i int, s *goquery.Selection){
