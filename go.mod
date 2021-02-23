@@ -3,7 +3,7 @@ module cleanrss
 go 1.16
 
 require (
-	github.com/PuerkitoBio/goquery v1.6.1 // indirect
+	github.com/PuerkitoBio/goquery v1.6.1
 	github.com/andybalholm/brotli v1.0.1 // indirect
 	github.com/andybalholm/cascadia v1.2.0 // indirect
 	github.com/go-playground/validator/v10 v10.4.1

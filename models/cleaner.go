@@ -95,6 +95,14 @@ func getRawPage(url string, ua string) *bytes.Reader {
 
 func cleanPage(url string, parserJson map[string]interface{}) (string, error) {
 	var requestRules, htmlRules map[string]interface{}
+	if parserJson["request"] == nil && parserJson["html"] == nil {
+		buf := new(strings.Builder)
+		_, err := io.Copy(buf, getRawPage(url, "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Mobile Safari/537.36"))
+		if err != nil {
+			return "", err
+		}
+		return buf.String(), nil
+	}
 	requestRules = parserJson["request"].(map[string]interface{})
 	htmlRules = parserJson["html"].(map[string]interface{})
 
@@ -144,16 +152,10 @@ func CleanerGetPage(entryId int64) (string, error) {
 	cols, _ := rows.SliceScan()
 	url := cols[0].(string)
 	var parserJson interface{}
-	if cols[1] != nil {
-		err = json.Unmarshal([]byte(cols[1].(string)), &parserJson)
-		cleanedPage, err := cleanPage(url, parserJson.(map[string]interface{}))
-		if err != nil {
-			return "", err
-		}
-		return cleanedPage, nil
-	} else {
-		buf := new(strings.Builder)
-		io.Copy(buf, getRawPage(url, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36"))
-		return buf.String(), nil
+	err = json.Unmarshal([]byte(cols[1].(string)), &parserJson)
+	cleanedPage, err := cleanPage(url, parserJson.(map[string]interface{}))
+	if err != nil {
+		return "", err
 	}
+	return cleanedPage, nil
 }
