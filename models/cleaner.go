@@ -95,6 +95,14 @@ func getRawPage(url string, ua string) *bytes.Reader {
 
 func cleanPage(url string, parserJson map[string]interface{}) (string, error) {
 	var requestRules, htmlRules map[string]interface{}
+	if parserJson["request"] == nil && parserJson["html"] == nil {
+		buf := new(strings.Builder)
+		_, err := io.Copy(buf, getRawPage(url, "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Mobile Safari/537.36"))
+		if err != nil {
+			return "", err
+		}
+		return buf.String(), nil
+	}
 	requestRules = parserJson["request"].(map[string]interface{})
 	htmlRules = parserJson["html"].(map[string]interface{})
 
