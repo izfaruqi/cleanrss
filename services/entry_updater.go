@@ -17,7 +17,7 @@ func EntryUpdaterInit(){
 		entryUpdateTimer.Stop()
 	}
 	entryUpdateTimer = cron.New()
-	entryUpdateTimer.AddFunc("0 30 * * * *", refreshEntriesFromProviders)
+	entryUpdateTimer.AddFunc("0 */30 * * * *", refreshEntriesFromProviders)
 	entryUpdateTimer.Start()
 }
 
