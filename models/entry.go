@@ -59,7 +59,7 @@ func EntryDBRefreshFromProvider(id int64) (error) {
 	}
 
 	previousEntries := []Entry{}
-	err = utils.DB.Select(&previousEntries, "SELECT id, url FROM entries WHERE provider_id=$1 ORDER BY published_at DESC LIMIT $2", id, feed.Len())
+	err = utils.DB.Select(&previousEntries, "SELECT id, url FROM entries WHERE provider_id=$1 ORDER BY published_at DESC LIMIT $2", id, feed.Len()*2)
 	if err != nil {
 		return err
 	}
