@@ -29,6 +29,10 @@ func EntryGetFromDBByProvider(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(400).JSON("Query params is invalid.")
 	}
+	offset, err := strconv.Atoi(c.Query("offset", "0"))
+	if err != nil {
+		return c.Status(400).JSON("Query params is invalid.")
+	}
 	includeRawJson, err := strconv.ParseBool(c.Query("include_raw_json", "false"))
 	if err != nil {
 		return c.Status(400).JSON("Query params is invalid.")
@@ -39,14 +43,36 @@ func EntryGetFromDBByProvider(c *fiber.Ctx) error {
 	}
 	
 	var entries *[]models.Entry
-	entries, err = models.EntryGetFromDB(id, limit, includeRawJson)
+	entries, err = models.EntryGetFromDB(id, limit, offset, includeRawJson)
 	if (len(*entries) == 0 || entries == nil) && allowRefresh {
 		err = models.EntryDBRefreshFromProvider(id)
 		if err != nil {
 			return c.Status(500).JSON(err.Error())
 		}
-		entries, err = models.EntryGetFromDB(id, limit, includeRawJson)
+		entries, err = models.EntryGetFromDB(id, limit, offset, includeRawJson)
 	}
+	if err != nil {
+		return c.Status(500).JSON(err.Error())
+	}
+	return c.Status(200).JSON(entries)
+}
+
+func EntryGetFromDBByAllProviders(c *fiber.Ctx) error {
+	limit, err := strconv.Atoi(c.Query("limit", "20"))
+	if err != nil {
+		return c.Status(400).JSON("Query params is invalid.")
+	}
+	offset, err := strconv.Atoi(c.Query("offset", "0"))
+	if err != nil {
+		return c.Status(400).JSON("Query params is invalid.")
+	}
+	includeRawJson, err := strconv.ParseBool(c.Query("include_raw_json", "false"))
+	if err != nil {
+		return c.Status(400).JSON("Query params is invalid.")
+	}
+	
+	var entries *[]models.Entry
+	entries, err = models.EntryGetFromDB(-1, limit, offset, includeRawJson)
 	if err != nil {
 		return c.Status(500).JSON(err.Error())
 	}

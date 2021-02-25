@@ -98,13 +98,21 @@ func EntryDBRefreshFromProvider(id int64) (error) {
 	return nil
 }
 
-func EntryGetFromDB(providerId int64, limit int, includeRawJson bool) (*[]Entry, error){
+func EntryGetFromDB(providerId int64, limit int, offset int, includeRawJson bool) (*[]Entry, error){
 	entries := []Entry{}
 	var err error
 	if !includeRawJson {
-		err = utils.DB.Select(&entries, "SELECT id, provider_id, url, title, published_at, author, fetched_at FROM entries WHERE provider_id=$1 ORDER BY published_at DESC LIMIT $2", providerId, limit)		
+		if providerId == -1 {
+			err = utils.DB.Select(&entries, "SELECT id, provider_id, url, title, published_at, author, fetched_at FROM entries ORDER BY published_at DESC LIMIT $2 OFFSET $3", limit, offset)		
+		} else {
+			err = utils.DB.Select(&entries, "SELECT id, provider_id, url, title, published_at, author, fetched_at FROM entries WHERE provider_id=$1 ORDER BY published_at DESC LIMIT $2 OFFSET $3", providerId, limit, offset)		
+		}
 	} else {
-		err = utils.DB.Select(&entries, "SELECT * FROM entries WHERE provider_id=$1 ORDER BY published_at DESC LIMIT $2", providerId, limit)		
+		if providerId == -1 {
+			err = utils.DB.Select(&entries, "SELECT * FROM entries ORDER BY published_at DESC LIMIT $2 OFFSET $3", limit, offset)		
+		} else {
+			err = utils.DB.Select(&entries, "SELECT * FROM entries WHERE provider_id=$1 ORDER BY published_at DESC LIMIT $2 OFFSET $3", providerId, limit, offset)		
+		}
 	}
 	if err != nil {
 		return nil, err
