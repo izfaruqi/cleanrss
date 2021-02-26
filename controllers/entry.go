@@ -44,7 +44,7 @@ func EntryGetFromDBByProvider(c *fiber.Ctx) error {
 	
 	var entries *[]models.Entry
 	entries, err = models.EntryGetFromDB(id, limit, offset, includeRawJson)
-	if (len(*entries) == 0 || entries == nil) && allowRefresh {
+	if (len(*entries) == 0 || entries == nil) && allowRefresh && offset == 0 {
 		err = models.EntryDBRefreshFromProvider(id)
 		if err != nil {
 			return c.Status(500).JSON(err.Error())
