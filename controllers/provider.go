@@ -13,7 +13,7 @@ func ProviderGetAll(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(500).JSON(err.Error())
 	}
-	return c.JSON(providers)
+	return c.Status(200).JSON(providers)
 }
 
 func ProviderGetById(c *fiber.Ctx) error {
@@ -28,7 +28,7 @@ func ProviderGetById(c *fiber.Ctx) error {
 		}
 		return c.Status(500).JSON(err.Error())
 	}
-	return c.JSON(provider)
+	return c.Status(200).JSON(provider)
 }
 
 func ProviderInsert(c *fiber.Ctx) error {
@@ -47,7 +47,7 @@ func ProviderInsert(c *fiber.Ctx) error {
 		return c.Status(500).JSON(err.Error())
 	}
 
-	return c.JSON(map[string]int64{"id": insertedId})
+	return c.Status(200).JSON(map[string]int64{"id": insertedId})
 }
 
 func ProviderUpdate(c *fiber.Ctx) error {
@@ -72,7 +72,7 @@ func ProviderUpdate(c *fiber.Ctx) error {
 	if affected < 1 {
 		return c.Status(404).JSON("ID not found.")
 	}
-	return c.JSON(map[string]bool{"success": true})
+	return c.Status(200).JSON(map[string]bool{"success": true})
 }
 
 func ProviderDelete(c *fiber.Ctx) error {
@@ -87,5 +87,5 @@ func ProviderDelete(c *fiber.Ctx) error {
 	if affected < 1 {
 		return c.Status(404).JSON("ID not found.")
 	}
-	return c.JSON(map[string]bool{"success": true})
+	return c.Status(200).JSON(map[string]bool{"success": true})
 }
