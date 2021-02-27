@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"cleanrss/models"
+	"cleanrss/services"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -77,4 +78,9 @@ func EntryGetFromDBByAllProviders(c *fiber.Ctx) error {
 		return c.Status(500).JSON(err.Error())
 	}
 	return c.Status(200).JSON(entries)
+}
+
+func EntryRefreshDBFromAllProviders(c *fiber.Ctx) error {
+	services.RefreshEntriesFromProviders()
+	return c.Status(200).JSON(map[string]bool{"success": true})
 }

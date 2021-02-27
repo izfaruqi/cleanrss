@@ -17,11 +17,11 @@ func EntryUpdaterInit(){
 		entryUpdateTimer.Stop()
 	}
 	entryUpdateTimer = cron.New()
-	entryUpdateTimer.AddFunc("0 */30 * * * *", refreshEntriesFromProviders)
+	entryUpdateTimer.AddFunc("0 */30 * * * *", RefreshEntriesFromProviders)
 	entryUpdateTimer.Start()
 }
 
-func refreshEntriesFromProviders() {
+func RefreshEntriesFromProviders() {
 	log.Println("Updating entries...")
 	providerIds := refreshEntryUpdaterProviders()
 	for _, providerId := range providerIds {
