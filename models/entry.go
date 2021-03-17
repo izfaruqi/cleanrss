@@ -3,7 +3,6 @@ package models
 import (
 	"cleanrss/utils"
 	"encoding/json"
-	"errors"
 	"log"
 	"strconv"
 	"strings"
@@ -25,12 +24,6 @@ type Entry struct {
 	Json        string `json:"json" db:"json"`
 }
 
-var feedParser *gofeed.Parser
-
-func initFeedParser(){
-	feedParser = gofeed.NewParser()
-}
-
 func getRawEntriesFromProvider(id int64) (feed *gofeed.Feed, err error) {
 	var url string
 	err = utils.DB.Get(&url, "SELECT url FROM providers WHERE id = $1 AND is_deleted = 0", id)
@@ -42,17 +35,7 @@ func getRawEntriesFromProvider(id int64) (feed *gofeed.Feed, err error) {
 	req.SetRequestURI(url)
 	utils.FasthttpClient.Do(req, resp)
 
-	if feedParser == nil {
-		initFeedParser()
-	}
-
-	defer (func() {
-		if r := recover(); r != nil {
-			log.Println("Entry parser panic!")
-			feed = nil
-			err = errors.New("entry parser panic")
-		}
-	})()
+	feedParser := gofeed.NewParser()
 	feed, err = feedParser.ParseString(strings.TrimSpace(string(resp.Body())))
 	if err != nil {
 		return nil, err
