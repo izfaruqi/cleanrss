@@ -132,7 +132,7 @@ func cleanPage(url string, parserJson map[string]interface{}) (string, error) {
 	
 	if htmlRules["noscript"] != nil {
 		if htmlRules["noscript"].(bool) {
-			doc.Find("noscript").Each(func(i int, s *goquery.Selection){
+			rootNode.Find("noscript").Each(func(i int, s *goquery.Selection){
 				s.Parent().AppendHtml(s.Text())
 			})
 		}
@@ -140,11 +140,13 @@ func cleanPage(url string, parserJson map[string]interface{}) (string, error) {
 
 	if htmlRules["remove"] != nil {
 		for _, toRemove := range htmlRules["remove"].([]interface{}) {
-			doc.Find(toRemove.(string)).Each(func(i int, s *goquery.Selection){
+			rootNode.Find(toRemove.(string)).Each(func(i int, s *goquery.Selection){
 				s.Remove()
 		 })
 		}
 	}
+
+	rootNode.Find("a").SetAttr("target", "_blank")
 	
 	outStr, _ := goquery.OuterHtml(rootNode)
 	return outStr, nil

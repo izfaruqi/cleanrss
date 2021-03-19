@@ -13,7 +13,7 @@ func CleanerGetAll(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(500).JSON(err.Error())
 	}
-	return c.JSON(cleaners)
+	return c.Status(200).JSON(cleaners)
 }
 
 func CleanerGetById(c *fiber.Ctx) error {
@@ -29,7 +29,7 @@ func CleanerGetById(c *fiber.Ctx) error {
 		return c.Status(500).JSON(err.Error())
 	}
 	
-	return c.JSON(cleaner)
+	return c.Status(200).JSON(cleaner)
 }
 
 func CleanerInsert(c *fiber.Ctx) error {
@@ -48,7 +48,7 @@ func CleanerInsert(c *fiber.Ctx) error {
 		return c.Status(500).JSON(err.Error())
 	}
 
-	return c.JSON(map[string]int64{"id": insertedId})
+	return c.Status(200).JSON(map[string]int64{"id": insertedId})
 }
 
 func CleanerUpdate(c *fiber.Ctx) error {
@@ -76,7 +76,7 @@ func CleanerUpdate(c *fiber.Ctx) error {
 	if affected < 1 {
 		return c.Status(404).JSON("ID not found.")
 	}
-	return c.JSON(map[string]bool{"success": true})
+	return c.Status(200).JSON(map[string]bool{"success": true})
 }
 
 func CleanerDelete(c *fiber.Ctx) error {
@@ -94,7 +94,7 @@ func CleanerDelete(c *fiber.Ctx) error {
 	if affected < 1 {
 		return c.Status(404).JSON("ID not found.")
 	}
-	return c.JSON(map[string]bool{"success": true})
+	return c.Status(200).JSON(map[string]bool{"success": true})
 }
 
 func CleanerGetPageByEntryId(c *fiber.Ctx) error {

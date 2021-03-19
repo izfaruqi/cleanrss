@@ -24,15 +24,9 @@ type Entry struct {
 	Json        string `json:"json" db:"json"`
 }
 
-var feedParser *gofeed.Parser
-
-func initFeedParser(){
-	feedParser = gofeed.NewParser()
-}
-
-func getRawEntriesFromProvider(id int64) (*gofeed.Feed, error) {
+func getRawEntriesFromProvider(id int64) (feed *gofeed.Feed, err error) {
 	var url string
-	err := utils.DB.Get(&url, "SELECT url FROM providers WHERE id = $1 AND is_deleted = 0", id)
+	err = utils.DB.Get(&url, "SELECT url FROM providers WHERE id = $1 AND is_deleted = 0", id)
 	if err != nil {
 		return nil, err
 	}
@@ -41,11 +35,8 @@ func getRawEntriesFromProvider(id int64) (*gofeed.Feed, error) {
 	req.SetRequestURI(url)
 	utils.FasthttpClient.Do(req, resp)
 
-	if feedParser == nil {
-		initFeedParser()
-	}
-
-	feed, err := feedParser.ParseString(strings.TrimSpace(string(resp.Body())))
+	feedParser := gofeed.NewParser()
+	feed, err = feedParser.ParseString(strings.TrimSpace(string(resp.Body())))
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +50,7 @@ func EntryDBRefreshFromProvider(id int64) (error) {
 	}
 
 	previousEntries := []Entry{}
-	err = utils.DB.Select(&previousEntries, "SELECT id, url FROM entries WHERE provider_id=$1 ORDER BY published_at DESC LIMIT $2", id, feed.Len())
+	err = utils.DB.Select(&previousEntries, "SELECT id, url FROM entries WHERE provider_id=$1 ORDER BY published_at DESC LIMIT $2", id, feed.Len()*2)
 	if err != nil {
 		return err
 	}
@@ -98,13 +89,21 @@ func EntryDBRefreshFromProvider(id int64) (error) {
 	return nil
 }
 
-func EntryGetFromDB(providerId int64, limit int, includeRawJson bool) (*[]Entry, error){
+func EntryGetFromDB(providerId int64, limit int, offset int, includeRawJson bool) (*[]Entry, error){
 	entries := []Entry{}
 	var err error
 	if !includeRawJson {
-		err = utils.DB.Select(&entries, "SELECT id, provider_id, url, title, published_at, author, fetched_at FROM entries WHERE provider_id=$1 ORDER BY published_at DESC LIMIT $2", providerId, limit)		
+		if providerId == -1 {
+			err = utils.DB.Select(&entries, "SELECT id, provider_id, url, title, published_at, author, fetched_at FROM entries ORDER BY published_at DESC LIMIT $2 OFFSET $3", limit, offset)		
+		} else {
+			err = utils.DB.Select(&entries, "SELECT id, provider_id, url, title, published_at, author, fetched_at FROM entries WHERE provider_id=$1 ORDER BY published_at DESC LIMIT $2 OFFSET $3", providerId, limit, offset)		
+		}
 	} else {
-		err = utils.DB.Select(&entries, "SELECT * FROM entries WHERE provider_id=$1 ORDER BY published_at DESC LIMIT $2", providerId, limit)		
+		if providerId == -1 {
+			err = utils.DB.Select(&entries, "SELECT * FROM entries ORDER BY published_at DESC LIMIT $2 OFFSET $3", limit, offset)		
+		} else {
+			err = utils.DB.Select(&entries, "SELECT * FROM entries WHERE provider_id=$1 ORDER BY published_at DESC LIMIT $2 OFFSET $3", providerId, limit, offset)		
+		}
 	}
 	if err != nil {
 		return nil, err
