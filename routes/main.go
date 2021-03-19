@@ -23,4 +23,6 @@ func RoutesInit(router fiber.Router){
 	cleanerRouter(cleanerGroup)
 	entryGroup := router.Group("/entry")
 	entryRouter(entryGroup)
+	wsGroup := router.Group("/ws")
+	wsRouter(wsGroup)
 }
