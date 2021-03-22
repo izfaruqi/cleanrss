@@ -12,7 +12,6 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-
 type Entry struct {
 	Id          int64  `json:"id" db:"id"`
 	ProviderId  int64  `json:"providerId" db:"provider_id"`
@@ -43,7 +42,7 @@ func getRawEntriesFromProvider(id int64) (feed *gofeed.Feed, err error) {
 	return feed, nil
 }
 
-func EntryDBRefreshFromProvider(id int64) (error) {
+func EntryDBRefreshFromProvider(id int64) error {
 	feed, err := getRawEntriesFromProvider(id)
 	if err != nil {
 		return err
@@ -89,23 +88,38 @@ func EntryDBRefreshFromProvider(id int64) (error) {
 	return nil
 }
 
-func EntryGetFromDB(providerId int64, limit int, offset int, includeRawJson bool) (*[]Entry, error){
+func EntryGetFromDB(providerId int64, limit int, offset int, includeRawJson bool) (*[]Entry, error) {
 	entries := []Entry{}
 	var err error
 	if !includeRawJson {
 		if providerId == -1 {
-			err = utils.DB.Select(&entries, "SELECT id, provider_id, url, title, published_at, author, fetched_at FROM entries ORDER BY published_at DESC LIMIT $2 OFFSET $3", limit, offset)		
+			err = utils.DB.Select(&entries, "SELECT id, provider_id, url, title, published_at, author, fetched_at FROM entries ORDER BY published_at DESC LIMIT $2 OFFSET $3", limit, offset)
 		} else {
-			err = utils.DB.Select(&entries, "SELECT id, provider_id, url, title, published_at, author, fetched_at FROM entries WHERE provider_id=$1 ORDER BY published_at DESC LIMIT $2 OFFSET $3", providerId, limit, offset)		
+			err = utils.DB.Select(&entries, "SELECT id, provider_id, url, title, published_at, author, fetched_at FROM entries WHERE provider_id=$1 ORDER BY published_at DESC LIMIT $2 OFFSET $3", providerId, limit, offset)
 		}
 	} else {
 		if providerId == -1 {
-			err = utils.DB.Select(&entries, "SELECT * FROM entries ORDER BY published_at DESC LIMIT $2 OFFSET $3", limit, offset)		
+			err = utils.DB.Select(&entries, "SELECT * FROM entries ORDER BY published_at DESC LIMIT $2 OFFSET $3", limit, offset)
 		} else {
-			err = utils.DB.Select(&entries, "SELECT * FROM entries WHERE provider_id=$1 ORDER BY published_at DESC LIMIT $2 OFFSET $3", providerId, limit, offset)		
+			err = utils.DB.Select(&entries, "SELECT * FROM entries WHERE provider_id=$1 ORDER BY published_at DESC LIMIT $2 OFFSET $3", providerId, limit, offset)
 		}
 	}
 	if err != nil {
+		return nil, err
+	}
+	return &entries, nil
+}
+
+func EntrySearch(query string, providerId int64) (*[]Entry, error) {
+	entries := []Entry{}
+	var err error
+	if providerId != -1 {
+		err = utils.DB.Select(&entries, "SELECT id, provider_id, url, title, published_at, author, fetched_at FROM entries WHERE (title LIKE $1) AND provider_id = $2", "%"+query+"%", providerId)
+	} else {
+		err = utils.DB.Select(&entries, "SELECT id, provider_id, url, title, published_at, author, fetched_at FROM entries WHERE (title LIKE $1)", "%"+query+"%")
+	}
+	if err != nil {
+		log.Println(err)
 		return nil, err
 	}
 	return &entries, nil

@@ -8,7 +8,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-
 func EntryRefreshDBFromProvider(c *fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil {
@@ -42,7 +41,7 @@ func EntryGetFromDBByProvider(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(400).JSON("Query params is invalid.")
 	}
-	
+
 	var entries *[]models.Entry
 	entries, err = models.EntryGetFromDB(id, limit, offset, includeRawJson)
 	if (len(*entries) == 0 || entries == nil) && allowRefresh && offset == 0 {
@@ -71,7 +70,7 @@ func EntryGetFromDBByAllProviders(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(400).JSON("Query params is invalid.")
 	}
-	
+
 	var entries *[]models.Entry
 	entries, err = models.EntryGetFromDB(-1, limit, offset, includeRawJson)
 	if err != nil {
@@ -83,4 +82,20 @@ func EntryGetFromDBByAllProviders(c *fiber.Ctx) error {
 func EntryRefreshDBFromAllProviders(c *fiber.Ctx) error {
 	services.RefreshEntriesFromProviders()
 	return c.Status(200).JSON(map[string]bool{"success": true})
+}
+
+func EntrySearch(c *fiber.Ctx) error {
+	query := c.Query("q", "")
+	providerId, err := strconv.ParseInt(c.Query("provider_id", "-1"), 10, 64)
+	if err != nil {
+		c.Status(400).JSON("Bad Provider ID format.")
+	}
+	if query == "" {
+		c.Status(400).JSON("Query cannot be empty.")
+	}
+	entries, err := models.EntrySearch(query, providerId)
+	if err != nil {
+		c.Status(500).JSON("Internal server error")
+	}
+	return c.Status(200).JSON(entries)
 }
