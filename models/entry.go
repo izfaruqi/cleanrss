@@ -1,6 +1,7 @@
 package models
 
 import (
+	"cleanrss/controllers/ws"
 	"cleanrss/utils"
 	"encoding/json"
 	"log"
@@ -85,6 +86,7 @@ func EntryDBRefreshFromProvider(id int64) error {
 	}
 
 	log.Println("Finished updating provider #" + strconv.FormatInt(id, 10))
+	ws.WSNotifications <- ws.Notification{Code: "ENTRY_UPDATE_FINISH", Payload: strconv.FormatInt(id, 10)}
 	return nil
 }
 
