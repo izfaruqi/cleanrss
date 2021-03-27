@@ -12,12 +12,12 @@ var entryUpdateTimer *cron.Cron
 
 // TODO: Implement lock system to prevent potential race conditions when a manual update is trigger when update timer is running.
 
-func EntryUpdaterInit(){
+func EntryUpdaterInit() {
 	if entryUpdateTimer != nil {
 		entryUpdateTimer.Stop()
 	}
 	entryUpdateTimer = cron.New()
-	entryUpdateTimer.AddFunc("0 */30 * * * *", RefreshEntriesFromProviders)
+	entryUpdateTimer.AddFunc("0 0 * * * *", RefreshEntriesFromProviders)
 	entryUpdateTimer.Start()
 }
 
@@ -29,13 +29,12 @@ func RefreshEntriesFromProviders() {
 	}
 }
 
-func launchEntryDBRefresh(providerId int64){
+func launchEntryDBRefresh(providerId int64) {
 	err := models.EntryDBRefreshFromProvider(providerId)
 	if err != nil {
 		log.Println(err.Error())
 	}
 }
-
 
 func refreshEntryUpdaterProviders() []int64 {
 	providerIds := make([]int64, 0)

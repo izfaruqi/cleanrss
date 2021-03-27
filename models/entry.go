@@ -116,9 +116,9 @@ func EntrySearch(query string, providerId int64) (*[]Entry, error) {
 	entries := []Entry{}
 	var err error
 	if providerId != -1 {
-		err = utils.DB.Select(&entries, "SELECT id, provider_id, url, title, published_at, author, fetched_at FROM entries WHERE (title LIKE $1) AND provider_id = $2", "%"+query+"%", providerId)
+		err = utils.DB.Select(&entries, "SELECT id, provider_id, url, title, published_at, author, fetched_at FROM entries WHERE (title LIKE $1) AND provider_id = $2 ORDER BY published_at DESC", "%"+query+"%", providerId)
 	} else {
-		err = utils.DB.Select(&entries, "SELECT id, provider_id, url, title, published_at, author, fetched_at FROM entries WHERE (title LIKE $1)", "%"+query+"%")
+		err = utils.DB.Select(&entries, "SELECT id, provider_id, url, title, published_at, author, fetched_at FROM entries WHERE (title LIKE $1) ORDER BY published_at DESC", "%"+query+"%")
 	}
 	if err != nil {
 		log.Println(err)
