@@ -112,17 +112,31 @@ func EntryGetFromDB(providerId int64, limit int, offset int, includeRawJson bool
 	return &entries, nil
 }
 
-func EntrySearch(query string, providerId int64) (*[]Entry, error) {
+func EntrySearch(query string, dateFrom int64, dateUntil int64, providerId int64) (*[]Entry, error) {
 	entries := []Entry{}
-	var err error
+
+	sqlQuery := "SELECT id, provider_id, url, title, published_at, author, fetched_at FROM entries WHERE"
 	if providerId != -1 {
-		err = utils.DB.Select(&entries, "SELECT id, provider_id, url, title, published_at, author, fetched_at FROM entries WHERE (title LIKE $1) AND provider_id = $2 ORDER BY published_at DESC", "%"+query+"%", providerId)
-	} else {
-		err = utils.DB.Select(&entries, "SELECT id, provider_id, url, title, published_at, author, fetched_at FROM entries WHERE (title LIKE $1) ORDER BY published_at DESC", "%"+query+"%")
+		sqlQuery += " provider_id = :providerId AND"
 	}
+	if dateFrom != -1 && dateUntil != -1 {
+		sqlQuery += " (published_at BETWEEN :dateFrom AND :dateUntil) AND"
+	}
+	sqlQuery += " (title LIKE :query) ORDER BY published_at DESC"
+
+	rows, err := utils.DB.NamedQuery(sqlQuery, map[string]interface{}{"providerId": providerId, "query": ("%" + query + "%"), "dateFrom": dateFrom, "dateUntil": dateUntil})
 	if err != nil {
 		log.Println(err)
 		return nil, err
+	}
+	for rows.Next() {
+		entry := Entry{}
+		err := rows.StructScan(&entry)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+		entries = append(entries, entry)
 	}
 	return &entries, nil
 }

@@ -86,6 +86,8 @@ func EntryRefreshDBFromAllProviders(c *fiber.Ctx) error {
 
 func EntrySearch(c *fiber.Ctx) error {
 	query := c.Query("q", "")
+	dateFrom, err := strconv.ParseInt(c.Query("date_from", "-1"), 10, 64)
+	dateUntil, err := strconv.ParseInt(c.Query("date_until", "-1"), 10, 64)
 	providerId, err := strconv.ParseInt(c.Query("provider_id", "-1"), 10, 64)
 	if err != nil {
 		c.Status(400).JSON("Bad Provider ID format.")
@@ -93,7 +95,7 @@ func EntrySearch(c *fiber.Ctx) error {
 	if query == "" {
 		c.Status(400).JSON("Query cannot be empty.")
 	}
-	entries, err := models.EntrySearch(query, providerId)
+	entries, err := models.EntrySearch(query, dateFrom, dateUntil, providerId)
 	if err != nil {
 		c.Status(500).JSON("Internal server error")
 	}
