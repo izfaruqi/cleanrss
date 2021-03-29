@@ -6,9 +6,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func entryRouter(router fiber.Router){
-	router.Get("/", controllers.EntryGetFromDBByAllProviders)
+func entryRouter(router fiber.Router) {
 	router.Get("/refresh", controllers.EntryRefreshDBFromAllProviders)
 	router.Get("/provider/:id/refresh", controllers.EntryRefreshDBFromProvider)
-	router.Get("/provider/:id", controllers.EntryGetFromDBByProvider)
+	router.Get("/query", controllers.EntryQuery)
 }

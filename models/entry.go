@@ -1,6 +1,7 @@
 package models
 
 import (
+	"cleanrss/controllers/ws"
 	"cleanrss/utils"
 	"encoding/json"
 	"log"
@@ -11,7 +12,6 @@ import (
 	"github.com/mmcdole/gofeed"
 	"github.com/valyala/fasthttp"
 )
-
 
 type Entry struct {
 	Id          int64  `json:"id" db:"id"`
@@ -43,7 +43,7 @@ func getRawEntriesFromProvider(id int64) (feed *gofeed.Feed, err error) {
 	return feed, nil
 }
 
-func EntryDBRefreshFromProvider(id int64) (error) {
+func EntryDBRefreshFromProvider(id int64) error {
 	feed, err := getRawEntriesFromProvider(id)
 	if err != nil {
 		return err
@@ -86,27 +86,70 @@ func EntryDBRefreshFromProvider(id int64) (error) {
 	}
 
 	log.Println("Finished updating provider #" + strconv.FormatInt(id, 10))
+	ws.WSNotifications <- ws.Notification{Code: "ENTRY_UPDATE_FINISH", Payload: strconv.FormatInt(id, 10)}
 	return nil
 }
 
-func EntryGetFromDB(providerId int64, limit int, offset int, includeRawJson bool) (*[]Entry, error){
+func EntryGetFromDB(providerId int64, limit int, offset int, includeRawJson bool) (*[]Entry, error) {
 	entries := []Entry{}
 	var err error
 	if !includeRawJson {
 		if providerId == -1 {
-			err = utils.DB.Select(&entries, "SELECT id, provider_id, url, title, published_at, author, fetched_at FROM entries ORDER BY published_at DESC LIMIT $2 OFFSET $3", limit, offset)		
+			err = utils.DB.Select(&entries, "SELECT id, provider_id, url, title, published_at, author, fetched_at FROM entries ORDER BY published_at DESC LIMIT $2 OFFSET $3", limit, offset)
 		} else {
-			err = utils.DB.Select(&entries, "SELECT id, provider_id, url, title, published_at, author, fetched_at FROM entries WHERE provider_id=$1 ORDER BY published_at DESC LIMIT $2 OFFSET $3", providerId, limit, offset)		
+			err = utils.DB.Select(&entries, "SELECT id, provider_id, url, title, published_at, author, fetched_at FROM entries WHERE provider_id=$1 ORDER BY published_at DESC LIMIT $2 OFFSET $3", providerId, limit, offset)
 		}
 	} else {
 		if providerId == -1 {
-			err = utils.DB.Select(&entries, "SELECT * FROM entries ORDER BY published_at DESC LIMIT $2 OFFSET $3", limit, offset)		
+			err = utils.DB.Select(&entries, "SELECT * FROM entries ORDER BY published_at DESC LIMIT $2 OFFSET $3", limit, offset)
 		} else {
-			err = utils.DB.Select(&entries, "SELECT * FROM entries WHERE provider_id=$1 ORDER BY published_at DESC LIMIT $2 OFFSET $3", providerId, limit, offset)		
+			err = utils.DB.Select(&entries, "SELECT * FROM entries WHERE provider_id=$1 ORDER BY published_at DESC LIMIT $2 OFFSET $3", providerId, limit, offset)
 		}
 	}
 	if err != nil {
 		return nil, err
+	}
+	return &entries, nil
+}
+
+func EntrySearch(query string, dateFrom int64, dateUntil int64, providerId int64, limit int64, offset int64, includeAll bool) (*[]Entry, error) {
+	entries := []Entry{}
+	var sqlQuery string
+
+	whereClauses := []string{}
+	if providerId != -1 {
+		whereClauses = append(whereClauses, "provider_id = :providerId")
+	}
+	if dateFrom != -1 && dateUntil != -1 {
+		whereClauses = append(whereClauses, "(published_at BETWEEN :dateFrom AND :dateUntil)")
+	}
+	if query != "" {
+		whereClauses = append(whereClauses, "(title LIKE :query)")
+	}
+	if includeAll {
+		sqlQuery = "SELECT * FROM entries"
+	} else {
+		sqlQuery = "SELECT id, provider_id, url, title, published_at, author, fetched_at FROM entries"
+	}
+	if len(whereClauses) != 0 {
+		sqlQuery += " WHERE "
+	}
+	sqlQuery += strings.Join(whereClauses, " AND ")
+	sqlQuery += " ORDER BY published_at DESC LIMIT :limit OFFSET :offset"
+
+	rows, err := utils.DB.NamedQuery(sqlQuery, map[string]interface{}{"providerId": providerId, "query": ("%" + query + "%"), "dateFrom": dateFrom, "dateUntil": dateUntil, "limit": limit, "offset": offset})
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	for rows.Next() {
+		entry := Entry{}
+		err := rows.StructScan(&entry)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+		entries = append(entries, entry)
 	}
 	return &entries, nil
 }
