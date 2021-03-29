@@ -112,19 +112,32 @@ func EntryGetFromDB(providerId int64, limit int, offset int, includeRawJson bool
 	return &entries, nil
 }
 
-func EntrySearch(query string, dateFrom int64, dateUntil int64, providerId int64) (*[]Entry, error) {
+func EntrySearch(query string, dateFrom int64, dateUntil int64, providerId int64, limit int64, offset int64, includeAll bool) (*[]Entry, error) {
 	entries := []Entry{}
+	var sqlQuery string
 
-	sqlQuery := "SELECT id, provider_id, url, title, published_at, author, fetched_at FROM entries WHERE"
+	whereClauses := []string{}
 	if providerId != -1 {
-		sqlQuery += " provider_id = :providerId AND"
+		whereClauses = append(whereClauses, "provider_id = :providerId")
 	}
 	if dateFrom != -1 && dateUntil != -1 {
-		sqlQuery += " (published_at BETWEEN :dateFrom AND :dateUntil) AND"
+		whereClauses = append(whereClauses, "(published_at BETWEEN :dateFrom AND :dateUntil)")
 	}
-	sqlQuery += " (title LIKE :query) ORDER BY published_at DESC"
+	if query != "" {
+		whereClauses = append(whereClauses, "(title LIKE :query)")
+	}
+	if includeAll {
+		sqlQuery = "SELECT * FROM entries"
+	} else {
+		sqlQuery = "SELECT id, provider_id, url, title, published_at, author, fetched_at FROM entries"
+	}
+	if len(whereClauses) != 0 {
+		sqlQuery += " WHERE "
+	}
+	sqlQuery += strings.Join(whereClauses, " AND ")
+	sqlQuery += " ORDER BY published_at DESC LIMIT :limit OFFSET :offset"
 
-	rows, err := utils.DB.NamedQuery(sqlQuery, map[string]interface{}{"providerId": providerId, "query": ("%" + query + "%"), "dateFrom": dateFrom, "dateUntil": dateUntil})
+	rows, err := utils.DB.NamedQuery(sqlQuery, map[string]interface{}{"providerId": providerId, "query": ("%" + query + "%"), "dateFrom": dateFrom, "dateUntil": dateUntil, "limit": limit, "offset": offset})
 	if err != nil {
 		log.Println(err)
 		return nil, err
