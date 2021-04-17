@@ -17,7 +17,8 @@ var (
 	host      string
 )
 
-func ProxyServerInit(listenOn string) {
+func ProxyServerInit(listenOn string, wg *sync.WaitGroup) {
+	defer wg.Done()
 	csp := []byte("Content-Security-Policy")
 	server := fiber.New(fiber.Config{DisableStartupMessage: true})
 
