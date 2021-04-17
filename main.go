@@ -7,7 +7,7 @@ import (
 	"cleanrss/utils"
 )
 
-func main(){
+func main() {
 	log.Println("CleanRSS Server starting...")
 	utils.DBInit()
 	utils.HttpClientInit()
@@ -15,6 +15,8 @@ func main(){
 
 	defer utils.DB.Close()
 	defer log.Println("CleanRSS Server shutting down...")
-	
-	ServerInit()
+
+	go ServerInit()
+	go ProxyServerInit("localhost:3333")
+	select {}
 }
