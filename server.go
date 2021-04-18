@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"sync"
 
 	"cleanrss/routes"
 
@@ -14,7 +15,7 @@ import (
 )
 
 type ErrorResponse struct {
-	Code string `json:"code"`
+	Code    string `json:"code"`
 	Message string `json:"message"`
 }
 
@@ -23,12 +24,13 @@ var static embed.FS
 
 var Server *fiber.App
 
-func ServerInit(){
+func ServerInit(wg *sync.WaitGroup) {
+	defer wg.Done()
 	Server = fiber.New(fiber.Config{DisableStartupMessage: true})
 	Server.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
 	}))
-	
+
 	ServeShutdown()
 	ServeStatic()
 	apiGroup := Server.Group("/api")
@@ -46,7 +48,7 @@ func ServeStatic() {
 }
 
 func ServeShutdown() {
-	Server.Use("/shutdown", func (c *fiber.Ctx) error {
+	Server.Use("/shutdown", func(c *fiber.Ctx) error {
 		Server.Shutdown()
 		return c.SendStatus(200)
 	})
