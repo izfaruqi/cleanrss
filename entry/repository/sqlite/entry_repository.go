@@ -28,10 +28,6 @@ func (s sqliteEntryRepository) GetById(id int64, withJson bool) (domain.Entry, e
 	return entry, nil
 }
 
-func (s sqliteEntryRepository) GetAll() (*[]domain.Entry, error) {
-	panic("implement me")
-}
-
 func (s sqliteEntryRepository) Insert(entry domain.Entry) error {
 	res, err := s.db.NamedExec("INSERT INTO entries (provider_id, url, title, published_at, author, fetched_at, json) VALUES (:provider_id, :url, :title, :published_at, :author, :fetched_at, :json)", entry)
 	if err != nil {
@@ -66,10 +62,6 @@ func (s sqliteEntryRepository) Update(entry domain.Entry) error {
 		return err
 	} // TODO: Throw error if no rows affected.
 	return err
-}
-
-func (s sqliteEntryRepository) Delete(id int64) error {
-	panic("implement me")
 }
 
 func (e sqliteEntryRepository) GetByQuery(query string, dateFrom, dateUntil, providerId, limit, offset int64, withJson, onlyIdAndUrl bool) ([]domain.Entry, error) {

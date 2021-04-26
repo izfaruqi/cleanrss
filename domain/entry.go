@@ -21,10 +21,8 @@ type EntryUsecase interface {
 
 type EntryRepository interface {
 	GetById(id int64, withJson bool) (Entry, error)
-	GetAll() (*[]Entry, error)
 	Insert(provider Entry) error
 	Update(provider Entry) error
-	Delete(id int64) error
 	GetByQuery(query string, dateFrom, dateUntil, providerId, limit, offset int64, withJson, onlyIdAndUrl bool) ([]Entry, error)
 	BulkInsert(entries []Entry) error
 }

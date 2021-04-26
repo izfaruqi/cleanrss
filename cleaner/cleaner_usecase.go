@@ -60,6 +60,7 @@ func (c cleanerUsecase) cleanPage(url string, parserJson map[string]interface{})
 	if err != nil {
 		return "", nil
 	}
+
 	doc, err := goquery.NewDocumentFromReader(pageBodyReader)
 	if err != nil {
 		return "", err
