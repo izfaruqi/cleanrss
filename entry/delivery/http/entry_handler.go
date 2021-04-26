@@ -38,7 +38,7 @@ func (h entryHttpHandler) refreshFromProvider(c *fiber.Ctx) error {
 }
 
 func (h entryHttpHandler) getByQuery(c *fiber.Ctx) error {
-	var entries *[]domain.Entry
+	var entries []domain.Entry
 	query := c.Query("q", "")
 	dateFrom, err := strconv.ParseInt(c.Query("date_from", "-1"), 10, 64)
 	dateUntil, err := strconv.ParseInt(c.Query("date_until", "-1"), 10, 64)
@@ -55,7 +55,7 @@ func (h entryHttpHandler) getByQuery(c *fiber.Ctx) error {
 		return c.Status(400).JSON("Query cannot be empty.")
 	}
 	entries, err = h.U.GetByQuery(query, dateFrom, dateUntil, providerId, limit, offset, includeAll)
-	if (entries == nil || len(*entries) == 0) && providerId != -1 && allowRefresh && offset == 0 {
+	if (entries == nil || len(entries) == 0) && providerId != -1 && allowRefresh && offset == 0 {
 		err = h.U.TriggerRefresh(providerId)
 		if err != nil {
 			return c.Status(500).JSON(err.Error())

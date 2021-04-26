@@ -72,7 +72,7 @@ func (s sqliteEntryRepository) Delete(id int64) error {
 	panic("implement me")
 }
 
-func (e sqliteEntryRepository) GetByQuery(query string, dateFrom int64, dateUntil int64, providerId int64, limit int64, offset int64, withJson bool) (*[]domain.Entry, error) {
+func (e sqliteEntryRepository) GetByQuery(query string, dateFrom, dateUntil, providerId, limit, offset int64, withJson, onlyIdAndUrl bool) ([]domain.Entry, error) {
 	var entries []domain.Entry
 	var sqlQuery string
 
@@ -86,7 +86,9 @@ func (e sqliteEntryRepository) GetByQuery(query string, dateFrom int64, dateUnti
 	if query != "" {
 		whereClauses = append(whereClauses, "(title LIKE :query)")
 	}
-	if withJson {
+	if onlyIdAndUrl {
+		sqlQuery = "SELECT id, url FROM entries"
+	} else if withJson {
 		sqlQuery = "SELECT * FROM entries"
 	} else {
 		sqlQuery = "SELECT id, provider_id, url, title, published_at, author, fetched_at FROM entries"
@@ -111,11 +113,5 @@ func (e sqliteEntryRepository) GetByQuery(query string, dateFrom int64, dateUnti
 		}
 		entries = append(entries, entry)
 	}
-	return &entries, nil
-}
-
-func (s sqliteEntryRepository) GetUrlById(id int64) (string, error) {
-	var url string
-	err := s.db.Get(&url, "SELECT url FROM providers WHERE id = $1 AND is_deleted = 0", id)
-	return url, err
+	return entries, nil
 }

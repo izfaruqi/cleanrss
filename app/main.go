@@ -2,7 +2,6 @@ package main
 
 import (
 	"cleanrss/infrastructure"
-	"cleanrss/utils"
 
 	"cleanrss/cleaner"
 	cleanerHttp "cleanrss/cleaner/delivery/http"
@@ -26,7 +25,6 @@ func main() {
 	wg.Add(2)
 
 	db, err := infrastructure.NewDB()
-	utils.DBInit()
 	if err != nil {
 		log.Println(err)
 		return

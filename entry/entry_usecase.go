@@ -2,7 +2,6 @@ package entry
 
 import (
 	"cleanrss/domain"
-	"cleanrss/utils"
 	"log"
 	"strconv"
 )
@@ -25,8 +24,8 @@ func (e entryUsecase) GetAll(withJson bool) (*[]domain.Entry, error) {
 	panic("implement me")
 }
 
-func (e entryUsecase) GetByQuery(query string, dateFrom int64, dateUntil int64, providerId int64, limit int64, offset int64, withJson bool) (*[]domain.Entry, error) {
-	return e.r.GetByQuery(query, dateFrom, dateUntil, providerId, limit, offset, withJson)
+func (e entryUsecase) GetByQuery(query string, dateFrom int64, dateUntil int64, providerId int64, limit int64, offset int64, withJson bool) ([]domain.Entry, error) {
+	return e.r.GetByQuery(query, dateFrom, dateUntil, providerId, limit, offset, withJson, false)
 }
 
 func (e entryUsecase) TriggerRefresh(providerId int64) error {
@@ -35,8 +34,7 @@ func (e entryUsecase) TriggerRefresh(providerId int64) error {
 		return err
 	}
 
-	var previousEntries []domain.Entry
-	err = utils.DB.Select(&previousEntries, "SELECT id, url FROM entries WHERE provider_id=$1 ORDER BY published_at DESC LIMIT $2", providerId, entriesLen*2)
+	previousEntries, err := e.r.GetByQuery("", -1, -1, providerId, int64(entriesLen*2), 0, false, true)
 	if err != nil {
 		return err
 	}
