@@ -45,7 +45,7 @@ func main() {
 	cleanerHttp.NewCleanerHttpHandler(mainServer.Group("/api/cleaner"), cleaner.NewCleanerUsecase(cleanerRepo.NewSqliteCleanerRepository(db), cleanerWebExtRepo.NewWebExtCleanerRepository(httpClient)))
 	entryHttp.NewEntryHttpRouter(mainServer.Group("/api/entry"), entryUsecase)
 
-	proxyHttp.NewProxyHandler(proxyServer.App, "/proxy", "http://localhost:8081")
+	proxyHttp.NewProxyHandler(proxyServer.App, httpClient, "/proxy", "http://localhost:8081")
 
 	go func() {
 		err := mainServer.Listen("localhost:8080", &wg)

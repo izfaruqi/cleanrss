@@ -2,7 +2,6 @@ package http
 
 import (
 	"bytes"
-	"cleanrss/utils"
 	"github.com/gofiber/fiber/v2"
 	"github.com/valyala/fasthttp"
 	neturl "net/url"
@@ -12,13 +11,14 @@ import (
 
 type proxyHandler struct {
 	listeningAddress string
+	httpClient       *fasthttp.Client
 
 	hostMutex sync.Mutex
 	host      string
 }
 
-func NewProxyHandler(httpServer *fiber.App, endpoint string, listeningAddress string) {
-	proxyHandler := &proxyHandler{listeningAddress: listeningAddress}
+func NewProxyHandler(httpServer *fiber.App, httpClient *fasthttp.Client, endpoint string, listeningAddress string) {
+	proxyHandler := &proxyHandler{listeningAddress: listeningAddress, httpClient: httpClient}
 	httpServer.Use(endpoint, proxyHandler.HandleRequests)
 }
 
@@ -62,7 +62,7 @@ func (h *proxyHandler) HandleRequests(c *fiber.Ctx) error {
 		req.SetBody(c.Body())
 	}
 
-	err := utils.FasthttpClient.Do(req, res)
+	err := h.httpClient.Do(req, res)
 	if err != nil {
 		return err
 	}
