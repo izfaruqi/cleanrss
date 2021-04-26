@@ -1,7 +1,9 @@
 package main
 
 import (
+	tickerEntryUpdater "cleanrss/entry/delivery/ticker"
 	"cleanrss/infrastructure"
+	"time"
 
 	"cleanrss/cleaner"
 	cleanerHttp "cleanrss/cleaner/delivery/http"
@@ -33,13 +35,15 @@ func main() {
 	httpClient := infrastructure.NewHTTPClient()
 	mainServer := infrastructure.NewHTTPServer()
 	proxyServer := infrastructure.NewHTTPServer()
+	ticker := time.NewTicker(1 * time.Second)
 
 	providerRepository := providerRepo.NewSqliteProviderRepository(db)
 	providerUsecase := provider.NewProviderUsecase(providerRepository)
 	entryRepository := entryRepo.NewSqliteEntryRepository(db)
+	entryUsecase := entry.NewEntryUsecase(entryRepository, entryWebExtRepo.NewWebExtEntryRepository(httpClient, entryRepository, providerUsecase), providerRepository)
 	providerHttp.NewProviderHttpHandler(mainServer.Group("/api/provider"), providerUsecase)
 	cleanerHttp.NewCleanerHttpHandler(mainServer.Group("/api/cleaner"), cleaner.NewCleanerUsecase(cleanerRepo.NewSqliteCleanerRepository(db), cleanerWebExtRepo.NewWebExtCleanerRepository(httpClient)))
-	entryHttp.NewEntryHttpRouter(mainServer.Group("/api/entry"), entry.NewEntryUsecase(entryRepository, entryWebExtRepo.NewWebExtEntryRepository(httpClient, entryRepository, providerUsecase), providerRepository))
+	entryHttp.NewEntryHttpRouter(mainServer.Group("/api/entry"), entryUsecase)
 
 	proxyHttp.NewProxyHandler(proxyServer.App, "/proxy", "http://localhost:8081")
 
@@ -57,6 +61,7 @@ func main() {
 		}
 	}()
 	log.Println("Proxy server will start on http://localhost:8081")
+	tickerEntryUpdater.NewTickerEntryUpdater(ticker, entryUsecase)
 
 	wg.Wait()
 }
