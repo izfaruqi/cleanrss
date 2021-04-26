@@ -1,6 +1,9 @@
 package domain
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"io"
+)
 
 type Cleaner struct {
 	Id        int64  `json:"id" db:"id"`
@@ -39,6 +42,7 @@ type CleanerUsecase interface {
 	Insert(cleaner *Cleaner) error
 	Update(cleaner Cleaner) error
 	Delete(id int64) error
+	GetCleanedEntry(entryId int64) (string, error)
 }
 
 type CleanerRepository interface {
@@ -47,4 +51,9 @@ type CleanerRepository interface {
 	Insert(cleaner *Cleaner) error
 	Update(cleaner Cleaner) error
 	Delete(id int64) error
+	GetEntryUrlAndCleaner(id int64) (url string, cleaner string, err error)
+}
+
+type WebExtCleanerRepository interface {
+	GetRawPage(url string, mobileUA bool) (io.Reader, error)
 }

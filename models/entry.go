@@ -33,7 +33,11 @@ func getRawEntriesFromProvider(id int64) (feed *gofeed.Feed, err error) {
 	req := fasthttp.AcquireRequest()
 	resp := fasthttp.AcquireResponse()
 	req.SetRequestURI(url)
-	utils.FasthttpClient.Do(req, resp)
+	err = utils.FasthttpClient.Do(req, resp)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 
 	feedParser := gofeed.NewParser()
 	feed, err = feedParser.ParseString(strings.TrimSpace(string(resp.Body())))

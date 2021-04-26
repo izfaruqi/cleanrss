@@ -17,8 +17,21 @@ func NewCleanerHttpHandler(httpRouter fiber.Router, u domain.CleanerUsecase) {
 	httpRouter.Post("/", handler.insert)
 	httpRouter.Post("/:id", handler.update)
 	httpRouter.Delete("/:id", handler.delete)
+	httpRouter.Get("/clean/:id", handler.cleanPage)
 }
 
+func (h cleanerHttpHandler) cleanPage(c *fiber.Ctx) error {
+	entryId, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil {
+		return c.Status(400).JSON("ID is invalid.")
+	}
+	cleaner, err := h.U.GetCleanedEntry(entryId)
+	if err != nil {
+		return c.Status(500).JSON(err.Error())
+	}
+	c.Response().Header.Set("Content-Type", "text/html; charset=utf-8")
+	return c.Status(200).SendString(cleaner)
+}
 func (h cleanerHttpHandler) getAll(c *fiber.Ctx) error {
 	cleaners, err := h.U.GetAll()
 	if err != nil {

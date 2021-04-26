@@ -18,7 +18,7 @@ func EntryUpdaterInit() {
 	}
 	entryUpdateTimer = cron.New()
 	entryUpdateTimer.AddFunc("0 0 * * * *", RefreshEntriesFromProviders)
-	entryUpdateTimer.Start()
+	//entryUpdateTimer.Start()
 }
 
 func RefreshEntriesFromProviders() {

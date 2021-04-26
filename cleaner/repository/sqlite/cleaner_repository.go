@@ -79,3 +79,19 @@ func (m sqliteCleanerRepository) Delete(id int64) error {
 	}
 	return nil
 }
+
+func (m sqliteCleanerRepository) GetEntryUrlAndCleaner(id int64) (url string, cleaner string, err error) {
+	rows, err := m.DB.Queryx("SELECT entries.url, cleaners.rules_json FROM entries LEFT JOIN providers ON entries.provider_id = providers.id LEFT JOIN cleaners ON providers.parser_id = cleaners.id WHERE entries.id = $1 LIMIT 1", id)
+	if err != nil {
+		return "", "", err
+	}
+	rows.Next()
+	cols, err := rows.SliceScan()
+	if err != nil {
+		return "", "", err
+	}
+	url = cols[0].(string)
+	cleaner = cols[1].(string)
+	err = nil
+	return
+}
