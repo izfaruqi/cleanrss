@@ -46,22 +46,22 @@ func main() {
 	cleanerHttp.NewCleanerHttpHandler(mainServer.Group("/api/cleaner"), cleaner.NewCleanerUsecase(cleanerRepo.NewSqliteCleanerRepository(db), cleanerWebExtRepo.NewWebExtCleanerRepository(httpClient)))
 	entryHttp.NewEntryHttpRouter(mainServer.Group("/api/entry"), entryUsecase)
 
-	proxyHttp.NewProxyHandler(proxyServer.App, httpClient, "/proxy", "http://localhost:8081")
+	proxyHttp.NewProxyHandler(proxyServer.App, httpClient, "/proxy", "http://localhost:1338")
 
 	go func() {
-		err := mainServer.Listen("localhost:8080", &wg)
+		err := mainServer.Listen("localhost:1337", &wg)
 		if err != nil {
 			log.Println(err)
 		}
 	}()
-	log.Println("Main server will start on http://localhost:8080")
+	log.Println("Main server will start on http://localhost:1337")
 	go func() {
-		err := proxyServer.Listen("localhost:8081", &wg)
+		err := proxyServer.Listen("localhost:1338", &wg)
 		if err != nil {
 			log.Println(err)
 		}
 	}()
-	log.Println("Proxy server will start on http://localhost:8081")
+	log.Println("Proxy server will start on http://localhost:1338")
 	tickerEntryUpdater.NewTickerEntryUpdater(ticker, entryUsecase)
 
 	wg.Wait()
