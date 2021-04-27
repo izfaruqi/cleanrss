@@ -10,10 +10,14 @@ type entryUsecase struct {
 	r  domain.EntryRepository
 	we domain.WebExtEntryRepository
 	rp domain.ProviderRepository
+	nu domain.NotificationService
 }
 
-func NewEntryUsecase(r domain.EntryRepository, we domain.WebExtEntryRepository, rp domain.ProviderRepository) domain.EntryUsecase {
-	return entryUsecase{r: r, we: we, rp: rp}
+func NewEntryUsecase(r domain.EntryRepository, we domain.WebExtEntryRepository, rp domain.ProviderRepository, nu domain.NotificationService) domain.EntryUsecase {
+	nu.Subscribe(func(notification domain.Notification) {
+		log.Println("From entry usecase: " + notification.Payload.(string))
+	})
+	return entryUsecase{r: r, we: we, rp: rp, nu: nu}
 }
 
 func (e entryUsecase) GetById(id int64, withJson bool) (domain.Entry, error) {
@@ -66,6 +70,7 @@ func (e entryUsecase) TriggerRefresh(providerId int64) error {
 	}
 
 	log.Println("Finished updating provider #" + strconv.FormatInt(providerId, 10))
+	e.nu.Publish(domain.Notification{Code: "ENTRY_UPDATE_FINISH", Payload: providerId})
 	//ws.WSNotifications <- ws.Notification{Code: "ENTRY_UPDATE_FINISH", Payload: strconv.FormatInt(providerId, 10)}
 	return nil
 }
