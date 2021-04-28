@@ -21,3 +21,11 @@ func WriteJson(w http.ResponseWriter, d interface{}) {
 	}
 	w.Write(out)
 }
+
+func GetParam(v map[string][]string, key string, def string) string {
+	if val, ok := v[key]; ok {
+		return val[0]
+	} else {
+		return def
+	}
+}
