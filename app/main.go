@@ -33,7 +33,6 @@ func main() {
 
 	httpClient := infrastructure.NewHTTPClient()
 	mainServer := infrastructure.NewHTTPServer()
-	proxyServer := infrastructure.NewHTTPFiberServer()
 	ticker := time.NewTicker(1 * time.Second)
 	notificationService, notificationHandler := ws.NewWSNotificationService()
 
@@ -51,15 +50,6 @@ func main() {
 	)
 	mainServer.Mount("/api/ws", notificationHandler)
 
-	//proxyHttp.NewProxyHandler(proxyServer.App, httpClient, "/proxy", "http://localhost:1338")
-
-	go func() {
-		err := mainServer.Listen("localhost:1336", &wg)
-		if err != nil {
-			log.Println(err)
-		}
-	}()
-	log.Println("Chi server will start on http://localhost:1336")
 	go func() {
 		err := mainServer.Listen("localhost:1337", &wg)
 		if err != nil {
@@ -67,13 +57,6 @@ func main() {
 		}
 	}()
 	log.Println("Main server will start on http://localhost:1337")
-	go func() {
-		err := proxyServer.Listen("localhost:1338", &wg)
-		if err != nil {
-			log.Println(err)
-		}
-	}()
-	log.Println("Proxy server will start on http://localhost:1338")
 	tickerEntryUpdater.NewTickerEntryUpdater(ticker, entryUsecase)
 
 	wg.Wait()
