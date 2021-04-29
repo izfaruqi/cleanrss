@@ -43,9 +43,6 @@ func main() {
 	providerUsecase := provider.NewProviderUsecase(providerRepository)
 	entryRepository := entryRepo.NewSqliteEntryRepository(db)
 	entryUsecase := entry.NewEntryUsecase(entryRepository, entryWebExtRepo.NewWebExtEntryRepository(httpClient, entryRepository, providerUsecase), providerRepository, notificationService)
-	providerHttp.NewProviderHttpHandler(mainServer.Group("/api/provider"), providerUsecase)
-	cleanerHttp.NewCleanerHttpHandler(mainServer.Group("/api/cleaner"), cleaner.NewCleanerUsecase(cleanerRepo.NewSqliteCleanerRepository(db), cleanerWebExtRepo.NewWebExtCleanerRepository(httpClient)))
-	entryHttp.NewEntryHttpRouter(mainServer.Group("/api/entry"), entryUsecase)
 
 	mainChiServer.Mount("/api/provider", providerHttp.NewProviderHTTPChiHandler(providerUsecase))
 	mainChiServer.Mount("/api/cleaner",
