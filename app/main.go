@@ -37,7 +37,7 @@ func main() {
 	mainChiServer := infrastructure.NewHTTPChiServer()
 	proxyServer := infrastructure.NewHTTPServer()
 	ticker := time.NewTicker(1 * time.Second)
-	notificationService := ws.NewWSNotificationService(mainServer.Group("/api/ws"))
+	notificationService, notificationHandler := ws.NewWSNotificationService()
 
 	providerRepository := providerRepo.NewSqliteProviderRepository(db)
 	providerUsecase := provider.NewProviderUsecase(providerRepository)
@@ -54,6 +54,7 @@ func main() {
 	mainChiServer.Mount("/api/entry",
 		entryHttp.NewEntryHTTPChiHandler(entryUsecase),
 	)
+	mainChiServer.Mount("/api/ws", notificationHandler)
 
 	proxyHttp.NewProxyHandler(proxyServer.App, httpClient, "/proxy", "http://localhost:1338")
 

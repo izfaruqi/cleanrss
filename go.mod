@@ -7,7 +7,7 @@ require (
 	github.com/andybalholm/cascadia v1.2.0 // indirect
 	github.com/go-chi/chi/v5 v5.0.2
 	github.com/gofiber/fiber/v2 v2.6.0
-	github.com/gofiber/websocket/v2 v2.0.2
+	github.com/gorilla/websocket v1.4.2
 	github.com/jmoiron/sqlx v1.3.1
 	github.com/klauspost/compress v1.11.12 // indirect
 	github.com/mattn/go-sqlite3 v1.14.6
