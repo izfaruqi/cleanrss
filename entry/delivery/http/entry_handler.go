@@ -2,68 +2,88 @@ package http
 
 import (
 	"cleanrss/domain"
-	"github.com/gofiber/fiber/v2"
+	utils_http "cleanrss/utils/http"
+	"errors"
+	"github.com/go-chi/chi/v5"
+	"net/http"
+	"net/url"
 	"strconv"
 )
 
-type entryHttpHandler struct {
-	U domain.EntryUsecase
+type entryHTTPHandler struct {
+	u domain.EntryUsecase
 }
 
-func NewEntryHttpRouter(httpRouter fiber.Router, u domain.EntryUsecase) {
-	handler := entryHttpHandler{U: u}
-	httpRouter.Get("/refresh", handler.refreshFromAllProviders)
-	httpRouter.Get("/refresh/provider/:id", handler.refreshFromProvider)
-	httpRouter.Get("/query", handler.getByQuery)
+func NewEntryHTTPHandler(u domain.EntryUsecase) http.Handler {
+	handler := entryHTTPHandler{u: u}
+	router := chi.NewRouter()
+	router.Get("/refresh", handler.refreshFromAllProviders)
+	router.Get("/refresh/provider/{id}", handler.refreshFromProvider)
+	router.Get("/query", handler.getByQuery)
+	return router
 }
 
-func (h entryHttpHandler) refreshFromAllProviders(c *fiber.Ctx) error {
-	err := h.U.TriggerRefreshAll()
+func (h entryHTTPHandler) refreshFromAllProviders(w http.ResponseWriter, r *http.Request) {
+	err := h.u.TriggerRefreshAll()
 	if err != nil {
-		return c.Status(500).JSON(err)
+		utils_http.WriteErrorResponse(w, http.StatusInternalServerError, err)
+		return
 	}
-	return c.Status(200).JSON(map[string]bool{"success": true})
+	w.WriteHeader(http.StatusOK)
+	utils_http.WriteJson(w, map[string]bool{"success": true})
+	return
 }
 
-func (h entryHttpHandler) refreshFromProvider(c *fiber.Ctx) error {
-	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+func (h entryHTTPHandler) refreshFromProvider(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {
-		return c.Status(400).JSON("ID is invalid.")
+		utils_http.WriteErrorResponse(w, http.StatusBadRequest, errors.New("id is invalid"))
+		return
 	}
-	err = h.U.TriggerRefresh(id)
+	err = h.u.TriggerRefresh(id)
 	if err != nil {
-		return c.Status(500).JSON(err.Error())
+		utils_http.WriteErrorResponse(w, http.StatusInternalServerError, err)
+		return
 	}
-	return c.Status(200).JSON(map[string]bool{"success": true})
+	w.WriteHeader(http.StatusOK)
+	utils_http.WriteJson(w, map[string]bool{"success": true})
+	return
 }
 
-func (h entryHttpHandler) getByQuery(c *fiber.Ctx) error {
+func (h entryHTTPHandler) getByQuery(w http.ResponseWriter, r *http.Request) {
 	var entries []domain.Entry
-	query := c.Query("q", "")
-	dateFrom, err := strconv.ParseInt(c.Query("date_from", "-1"), 10, 64)
-	dateUntil, err := strconv.ParseInt(c.Query("date_until", "-1"), 10, 64)
-	providerId, err := strconv.ParseInt(c.Query("provider_id", "-1"), 10, 64)
-	limit, err := strconv.ParseInt(c.Query("limit", "40"), 10, 64)
-	offset, err := strconv.ParseInt(c.Query("offset", "0"), 10, 64)
-	includeAll, err := strconv.ParseBool(c.Query("include_all", "false"))
-	allowRefresh, err := strconv.ParseBool(c.Query("allow_refresh", "true"))
+	queryParams, err := url.ParseQuery(r.URL.RawQuery)
+	if err != nil {
+		utils_http.WriteErrorResponse(w, http.StatusBadRequest, err)
+		return
+	}
+	query := queryParams.Get("q")
+	dateFrom, err := strconv.ParseInt(utils_http.GetParam(queryParams, "date_from", "-1"), 10, 64)
+	dateUntil, err := strconv.ParseInt(utils_http.GetParam(queryParams, "date_until", "-1"), 10, 64)
+	providerId, err := strconv.ParseInt(utils_http.GetParam(queryParams, "provider_id", "-1"), 10, 64)
+	limit, err := strconv.ParseInt(utils_http.GetParam(queryParams, "limit", "40"), 10, 64)
+	offset, err := strconv.ParseInt(utils_http.GetParam(queryParams, "offset", "0"), 10, 64)
+	includeAll, err := strconv.ParseBool(utils_http.GetParam(queryParams, "include_all", "false"))
+	allowRefresh, err := strconv.ParseBool(utils_http.GetParam(queryParams, "allow_refresh", "true"))
 
 	if err != nil {
-		return c.Status(400).JSON("Bad Provider ID format.")
+		utils_http.WriteErrorResponse(w, http.StatusBadRequest, errors.New("id is invalid"))
+		return
 	}
-	if query == "" {
-		return c.Status(400).JSON("Query cannot be empty.")
-	}
-	entries, err = h.U.GetByQuery(query, dateFrom, dateUntil, providerId, limit, offset, includeAll)
+	entries, err = h.u.GetByQuery(query, dateFrom, dateUntil, providerId, limit, offset, includeAll)
 	if (entries == nil || len(entries) == 0) && providerId != -1 && allowRefresh && offset == 0 {
-		err = h.U.TriggerRefresh(providerId)
+		err = h.u.TriggerRefresh(providerId)
 		if err != nil {
-			return c.Status(500).JSON(err.Error())
+			utils_http.WriteErrorResponse(w, http.StatusInternalServerError, err)
+			return
 		}
-		entries, err = h.U.GetByQuery(query, dateFrom, dateUntil, providerId, limit, offset, includeAll)
+		entries, err = h.u.GetByQuery(query, dateFrom, dateUntil, providerId, limit, offset, includeAll)
 	}
 	if err != nil {
-		return c.Status(500).JSON("Internal server error")
+		utils_http.WriteErrorResponse(w, http.StatusInternalServerError, err)
+		return
 	}
-	return c.Status(200).JSON(entries)
+	w.WriteHeader(http.StatusOK)
+	utils_http.WriteJson(w, entries)
+	return
 }

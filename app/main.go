@@ -17,7 +17,6 @@ import (
 	providerRepo "cleanrss/provider/repository/sqlite"
 	"time"
 
-	proxyHttp "cleanrss/proxy/delivery/http"
 	"log"
 	"sync"
 )
@@ -34,20 +33,33 @@ func main() {
 
 	httpClient := infrastructure.NewHTTPClient()
 	mainServer := infrastructure.NewHTTPServer()
-	proxyServer := infrastructure.NewHTTPServer()
+	proxyServer := infrastructure.NewHTTPFiberServer()
 	ticker := time.NewTicker(1 * time.Second)
-	notificationService := ws.NewWSNotificationService(mainServer.Group("/api/ws"))
+	notificationService, notificationHandler := ws.NewWSNotificationService()
 
 	providerRepository := providerRepo.NewSqliteProviderRepository(db)
 	providerUsecase := provider.NewProviderUsecase(providerRepository)
 	entryRepository := entryRepo.NewSqliteEntryRepository(db)
 	entryUsecase := entry.NewEntryUsecase(entryRepository, entryWebExtRepo.NewWebExtEntryRepository(httpClient, entryRepository, providerUsecase), providerRepository, notificationService)
-	providerHttp.NewProviderHttpHandler(mainServer.Group("/api/provider"), providerUsecase)
-	cleanerHttp.NewCleanerHttpHandler(mainServer.Group("/api/cleaner"), cleaner.NewCleanerUsecase(cleanerRepo.NewSqliteCleanerRepository(db), cleanerWebExtRepo.NewWebExtCleanerRepository(httpClient)))
-	entryHttp.NewEntryHttpRouter(mainServer.Group("/api/entry"), entryUsecase)
 
-	proxyHttp.NewProxyHandler(proxyServer.App, httpClient, "/proxy", "http://localhost:1338")
+	mainServer.Mount("/api/provider", providerHttp.NewProviderHTTPHandler(providerUsecase))
+	mainServer.Mount("/api/cleaner",
+		cleanerHttp.NewCleanerHTTPHandler(cleaner.NewCleanerUsecase(cleanerRepo.NewSqliteCleanerRepository(db), cleanerWebExtRepo.NewWebExtCleanerRepository(httpClient))),
+	)
+	mainServer.Mount("/api/entry",
+		entryHttp.NewEntryHTTPHandler(entryUsecase),
+	)
+	mainServer.Mount("/api/ws", notificationHandler)
 
+	//proxyHttp.NewProxyHandler(proxyServer.App, httpClient, "/proxy", "http://localhost:1338")
+
+	go func() {
+		err := mainServer.Listen("localhost:1336", &wg)
+		if err != nil {
+			log.Println(err)
+		}
+	}()
+	log.Println("Chi server will start on http://localhost:1336")
 	go func() {
 		err := mainServer.Listen("localhost:1337", &wg)
 		if err != nil {

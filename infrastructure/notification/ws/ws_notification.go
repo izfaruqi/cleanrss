@@ -3,9 +3,10 @@ package ws
 import (
 	"cleanrss/domain"
 	"encoding/json"
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/websocket/v2"
+	"github.com/go-chi/chi/v5"
+	"github.com/gorilla/websocket"
 	"log"
+	"net/http"
 	"sync"
 )
 
@@ -20,23 +21,26 @@ type wsNotificationService struct {
 	wsUnregisterClient chan *websocket.Conn
 }
 
-func NewWSNotificationService(httpRouter fiber.Router) domain.NotificationService {
+func NewWSNotificationService() (domain.NotificationService, http.Handler) {
 	ns := &wsNotificationService{wsClients: make(map[*websocket.Conn]wsClient), wsRegisterClient: make(chan *websocket.Conn), wsNotifications: make(chan domain.Notification), wsUnregisterClient: make(chan *websocket.Conn)}
+	router := chi.NewRouter()
 	go func() {
 		err := ns.initWS()
 		if err != nil {
 			log.Println(err)
 		}
 	}()
-	httpRouter.Use("/", func(c *fiber.Ctx) error {
-		if websocket.IsWebSocketUpgrade(c) {
-			c.Locals("allowed", true)
-			return c.Next()
+	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		upgrader := websocket.Upgrader{ReadBufferSize: 1024, WriteBufferSize: 1024, CheckOrigin: func(r *http.Request) bool { // TODO: Only allow connections from CleanRSS.
+			return true
+		}}
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			log.Println(err)
 		}
-		return fiber.ErrUpgradeRequired
+		ns.handleWS(conn)
 	})
-	httpRouter.Get("/", websocket.New(ns.handleWS))
-	return ns
+	return ns, router
 }
 
 func (w *wsNotificationService) initWS() error {
@@ -85,7 +89,6 @@ func (w *wsNotificationService) handleWS(c *websocket.Conn) {
 		err error
 	)
 	for {
-		log.Println("WS client connected.")
 		if mt, msg, err = c.ReadMessage(); err != nil {
 			log.Println("read:", err)
 			break

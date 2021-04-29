@@ -1,25 +1,28 @@
 package infrastructure
 
 import (
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/go-chi/chi/v5"
+	"net/http"
 	"sync"
 )
 
 type HTTPServer struct {
-	*fiber.App
+	*chi.Mux
 }
 
 func NewHTTPServer() HTTPServer {
 	var server HTTPServer
-	server.App = fiber.New(fiber.Config{DisableStartupMessage: true})
-	server.Use(cors.New(cors.Config{
-		AllowOrigins: "*",
-	}))
+	server.Mux = chi.NewRouter()
+	server.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			next.ServeHTTP(w, r)
+		})
+	})
 	return server
 }
 
 func (server HTTPServer) Listen(addr string, wg *sync.WaitGroup) error {
 	defer wg.Done()
-	return server.App.Listen(addr)
+	return http.ListenAndServe(addr, server)
 }
