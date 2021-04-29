@@ -33,8 +33,7 @@ func main() {
 
 	httpClient := infrastructure.NewHTTPClient()
 	mainServer := infrastructure.NewHTTPServer()
-	mainChiServer := infrastructure.NewHTTPChiServer()
-	proxyServer := infrastructure.NewHTTPServer()
+	proxyServer := infrastructure.NewHTTPFiberServer()
 	ticker := time.NewTicker(1 * time.Second)
 	notificationService, notificationHandler := ws.NewWSNotificationService()
 
@@ -43,19 +42,19 @@ func main() {
 	entryRepository := entryRepo.NewSqliteEntryRepository(db)
 	entryUsecase := entry.NewEntryUsecase(entryRepository, entryWebExtRepo.NewWebExtEntryRepository(httpClient, entryRepository, providerUsecase), providerRepository, notificationService)
 
-	mainChiServer.Mount("/api/provider", providerHttp.NewProviderHTTPChiHandler(providerUsecase))
-	mainChiServer.Mount("/api/cleaner",
-		cleanerHttp.NewCleanerHTTPChiHandler(cleaner.NewCleanerUsecase(cleanerRepo.NewSqliteCleanerRepository(db), cleanerWebExtRepo.NewWebExtCleanerRepository(httpClient))),
+	mainServer.Mount("/api/provider", providerHttp.NewProviderHTTPHandler(providerUsecase))
+	mainServer.Mount("/api/cleaner",
+		cleanerHttp.NewCleanerHTTPHandler(cleaner.NewCleanerUsecase(cleanerRepo.NewSqliteCleanerRepository(db), cleanerWebExtRepo.NewWebExtCleanerRepository(httpClient))),
 	)
-	mainChiServer.Mount("/api/entry",
-		entryHttp.NewEntryHTTPChiHandler(entryUsecase),
+	mainServer.Mount("/api/entry",
+		entryHttp.NewEntryHTTPHandler(entryUsecase),
 	)
-	mainChiServer.Mount("/api/ws", notificationHandler)
+	mainServer.Mount("/api/ws", notificationHandler)
 
 	//proxyHttp.NewProxyHandler(proxyServer.App, httpClient, "/proxy", "http://localhost:1338")
 
 	go func() {
-		err := mainChiServer.Listen("localhost:1336", &wg)
+		err := mainServer.Listen("localhost:1336", &wg)
 		if err != nil {
 			log.Println(err)
 		}

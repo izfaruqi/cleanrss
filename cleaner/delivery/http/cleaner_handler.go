@@ -2,100 +2,134 @@ package http
 
 import (
 	"cleanrss/domain"
-	"github.com/gofiber/fiber/v2"
+	utils_http "cleanrss/utils/http"
+	"encoding/json"
+	"errors"
+	"github.com/go-chi/chi/v5"
+	"net/http"
 	"strconv"
 )
 
-type cleanerHttpHandler struct {
-	U domain.CleanerUsecase
+type cleanerHTTPHandler struct {
+	u domain.CleanerUsecase
 }
 
-func NewCleanerHttpHandler(httpRouter fiber.Router, u domain.CleanerUsecase) {
-	handler := cleanerHttpHandler{U: u}
-	httpRouter.Get("/", handler.getAll)
-	httpRouter.Get("/:id", handler.getById)
-	httpRouter.Post("/", handler.insert)
-	httpRouter.Post("/:id", handler.update)
-	httpRouter.Delete("/:id", handler.delete)
-	httpRouter.Get("/clean/:id", handler.cleanPage)
+func NewCleanerHTTPHandler(u domain.CleanerUsecase) http.Handler {
+	handler := cleanerHTTPHandler{u: u}
+	router := chi.NewRouter()
+	router.Get("/", handler.getAll)
+	router.Get("/{id}", handler.getById)
+	router.Post("/", handler.insert)
+	router.Post("/{id}", handler.update)
+	router.Delete("/{id}", handler.delete)
+	router.Get("/clean/{id}", handler.cleanPage)
+	return router
 }
 
-func (h cleanerHttpHandler) cleanPage(c *fiber.Ctx) error {
-	entryId, err := strconv.ParseInt(c.Params("id"), 10, 64)
+func (h cleanerHTTPHandler) cleanPage(w http.ResponseWriter, r *http.Request) {
+	entryId, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {
-		return c.Status(400).JSON("ID is invalid.")
+		utils_http.WriteErrorResponse(w, http.StatusBadRequest, errors.New("id is invalid"))
+		return
 	}
-	cleaner, err := h.U.GetCleanedEntry(entryId)
+	cleaned, err := h.u.GetCleanedEntry(entryId)
 	if err != nil {
-		return c.Status(500).JSON(err.Error())
+		utils_http.WriteErrorResponse(w, http.StatusInternalServerError, err)
+		return
 	}
-	c.Response().Header.Set("Content-Type", "text/html; charset=utf-8")
-	return c.Status(200).SendString(cleaner)
-}
-func (h cleanerHttpHandler) getAll(c *fiber.Ctx) error {
-	cleaners, err := h.U.GetAll()
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write([]byte(cleaned))
 	if err != nil {
-		return c.Status(500).JSON(err.Error())
+		utils_http.WriteErrorResponse(w, http.StatusInternalServerError, err)
+		return
 	}
-	return c.Status(200).JSON(cleaners)
+	return
 }
 
-func (h cleanerHttpHandler) getById(c *fiber.Ctx) error {
-	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+func (h cleanerHTTPHandler) getAll(w http.ResponseWriter, r *http.Request) {
+	cleaners, err := h.u.GetAll()
 	if err != nil {
-		return c.Status(400).JSON("ID is invalid.")
+		utils_http.WriteErrorResponse(w, http.StatusInternalServerError, err)
+		return
 	}
-	cleaner, err := h.U.GetById(id)
+	w.WriteHeader(http.StatusOK)
+	utils_http.WriteJson(w, cleaners)
+	return
+}
+
+func (h cleanerHTTPHandler) getById(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil {
+		utils_http.WriteErrorResponse(w, http.StatusBadRequest, errors.New("id is invalid"))
+		return
+	}
+	cleaner, err := h.u.GetById(id)
 	if err != nil {
 		if err.Error() == "sql: no rows in result set" {
-			return c.Status(404).JSON(err.Error())
+			utils_http.WriteErrorResponse(w, http.StatusNotFound, err)
+			return
 		}
-		return c.Status(500).JSON(err.Error())
+		utils_http.WriteErrorResponse(w, http.StatusInternalServerError, err)
+		return
 	}
-	return c.Status(200).JSON(cleaner)
+	utils_http.WriteJson(w, cleaner)
+	return
 }
 
-func (h cleanerHttpHandler) insert(c *fiber.Ctx) error {
-	cleaner := new(domain.Cleaner)
-	err := c.BodyParser(cleaner)
+func (h cleanerHTTPHandler) insert(w http.ResponseWriter, r *http.Request) {
+	var cleaner domain.Cleaner
+	err := json.NewDecoder(r.Body).Decode(&cleaner)
 	if err != nil {
-		return c.Status(400).JSON(err.Error())
+		utils_http.WriteErrorResponse(w, http.StatusBadRequest, err)
+		return
 	}
 
-	err = h.U.Insert(cleaner)
+	err = h.u.Insert(&cleaner)
 	if err != nil {
-		return c.Status(500).JSON(err.Error())
+		utils_http.WriteErrorResponse(w, http.StatusInternalServerError, err)
+		return
 	}
-
-	return c.Status(200).JSON(map[string]int64{"id": cleaner.Id})
+	w.WriteHeader(http.StatusOK)
+	utils_http.WriteJson(w, map[string]int64{"id": cleaner.Id})
+	return
 }
 
-func (h cleanerHttpHandler) update(c *fiber.Ctx) error {
-	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+func (h cleanerHTTPHandler) update(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {
-		return c.Status(400).JSON("ID is invalid.")
+		utils_http.WriteErrorResponse(w, http.StatusInternalServerError, errors.New("id is invalid"))
+		return
 	}
-	cleaner := new(domain.Cleaner)
-	err = c.BodyParser(cleaner)
+	var cleaner domain.Cleaner
+	err = json.NewDecoder(r.Body).Decode(&cleaner)
 	if err != nil {
-		return c.Status(400).JSON(err.Error())
+		utils_http.WriteErrorResponse(w, http.StatusBadRequest, err)
+		return
 	}
 	cleaner.Id = id
-	err = h.U.Update(*cleaner)
+	err = h.u.Update(cleaner)
 	if err != nil {
-		return c.Status(500).JSON(err.Error())
+		utils_http.WriteErrorResponse(w, http.StatusInternalServerError, err)
+		return
 	}
-	return c.Status(200).JSON(map[string]bool{"success": true})
+	w.WriteHeader(http.StatusOK)
+	utils_http.WriteJson(w, map[string]bool{"success": true})
+	return
 }
 
-func (h cleanerHttpHandler) delete(c *fiber.Ctx) error {
-	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+func (h cleanerHTTPHandler) delete(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {
-		return c.Status(400).JSON("ID is invalid.")
+		utils_http.WriteErrorResponse(w, http.StatusBadRequest, errors.New("id is invalid"))
+		return
 	}
-	err = h.U.Delete(id)
+	err = h.u.Delete(id)
 	if err != nil {
-		return c.Status(500).JSON(err.Error())
+		utils_http.WriteErrorResponse(w, http.StatusInternalServerError, err)
+		return
 	}
-	return c.Status(200).JSON(map[string]bool{"success": true})
+	w.WriteHeader(http.StatusOK)
+	utils_http.WriteJson(w, map[string]bool{"success": true})
+	return
 }
