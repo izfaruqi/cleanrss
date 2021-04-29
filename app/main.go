@@ -17,7 +17,6 @@ import (
 	providerRepo "cleanrss/provider/repository/sqlite"
 	"time"
 
-	proxyHttp "cleanrss/proxy/delivery/http"
 	"log"
 	"sync"
 )
@@ -53,7 +52,7 @@ func main() {
 	)
 	mainChiServer.Mount("/api/ws", notificationHandler)
 
-	proxyHttp.NewProxyHandler(proxyServer.App, httpClient, "/proxy", "http://localhost:1338")
+	//proxyHttp.NewProxyHandler(proxyServer.App, httpClient, "/proxy", "http://localhost:1338")
 
 	go func() {
 		err := mainChiServer.Listen("localhost:1336", &wg)
