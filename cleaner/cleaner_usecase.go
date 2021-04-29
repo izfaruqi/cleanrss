@@ -50,7 +50,7 @@ func (c cleanerUsecase) cleanPage(url string, parserJson map[string]interface{})
 	requestRules = parserJson["request"].(map[string]interface{})
 	htmlRules = parserJson["html"].(map[string]interface{})
 
-	var pageBodyReader io.Reader
+	var pageBodyReader io.ReadCloser
 
 	if requestRules["mobileUA"] != nil {
 		pageBodyReader, err = c.we.GetRawPage(url, requestRules["mobileUA"].(bool))
@@ -62,6 +62,7 @@ func (c cleanerUsecase) cleanPage(url string, parserJson map[string]interface{})
 	}
 
 	doc, err := goquery.NewDocumentFromReader(pageBodyReader)
+	defer pageBodyReader.Close()
 	if err != nil {
 		return "", err
 	}

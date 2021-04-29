@@ -55,5 +55,5 @@ type CleanerRepository interface {
 }
 
 type WebExtCleanerRepository interface {
-	GetRawPage(url string, mobileUA bool) (io.Reader, error)
+	GetRawPage(url string, mobileUA bool) (io.ReadCloser, error)
 }
