@@ -34,7 +34,7 @@ func main() {
 
 	httpClient := infrastructure.NewHTTPClient()
 	mainServer := infrastructure.NewHTTPServer()
-	ticker := time.NewTicker(1 * time.Second)
+	ticker := time.NewTicker(5 * time.Second)
 	notificationService, notificationHandler := ws.NewWSNotificationService()
 
 	providerRepository := providerRepo.NewSqliteProviderRepository(db)

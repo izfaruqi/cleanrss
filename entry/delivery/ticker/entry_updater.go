@@ -23,9 +23,9 @@ func NewTickerEntryUpdater(ticker *time.Ticker, u domain.EntryUsecase) TickerEnt
 	}
 }
 
-func (t *TickerEntryUpdater) tick(time time.Time) {
-	if t.lastTick == nil || time.Minute() == 0 {
-		t.lastTick = &time
+func (t *TickerEntryUpdater) tick(currTime time.Time) {
+	if t.lastTick == nil || (t.lastTick.Minute() != currTime.Minute() && currTime.Minute()+1%30 == 0) {
+		t.lastTick = &currTime
 		log.Println("Refreshing all providers...")
 		err := t.u.TriggerRefreshAll()
 		if err != nil {
