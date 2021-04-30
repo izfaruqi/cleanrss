@@ -7,7 +7,6 @@ import (
 	cleanerWebExtRepo "cleanrss/cleaner/repository/web_ext"
 	"cleanrss/entry"
 	entryHttp "cleanrss/entry/delivery/http"
-	tickerEntryUpdater "cleanrss/entry/delivery/ticker"
 	entryRepo "cleanrss/entry/repository/sqlite"
 	entryWebExtRepo "cleanrss/entry/repository/web_ext"
 	"cleanrss/infrastructure"
@@ -15,8 +14,8 @@ import (
 	"cleanrss/provider"
 	providerHttp "cleanrss/provider/delivery/http"
 	providerRepo "cleanrss/provider/repository/sqlite"
-	"time"
-
+	"cleanrss/static"
+	"github.com/robfig/cron/v3"
 	"log"
 	"sync"
 )
@@ -33,7 +32,7 @@ func main() {
 
 	httpClient := infrastructure.NewHTTPClient()
 	mainServer := infrastructure.NewHTTPServer()
-	ticker := time.NewTicker(1 * time.Second)
+	cronScheduler := cron.New()
 	notificationService, notificationHandler := ws.NewWSNotificationService()
 
 	providerRepository := providerRepo.NewSqliteProviderRepository(db)
@@ -49,6 +48,7 @@ func main() {
 		entryHttp.NewEntryHTTPHandler(entryUsecase),
 	)
 	mainServer.Mount("/api/ws", notificationHandler)
+	mainServer.Mount("/", static.NewServeStaticHTTPHandler())
 
 	go func() {
 		err := mainServer.Listen("localhost:1337", &wg)
@@ -57,7 +57,18 @@ func main() {
 		}
 	}()
 	log.Println("Main server will start on http://localhost:1337")
-	tickerEntryUpdater.NewTickerEntryUpdater(ticker, entryUsecase)
+
+	_, err = cronScheduler.AddFunc("* * * * *", func() {
+		log.Println("Updating all providers...")
+		err := entryUsecase.TriggerRefreshAll()
+		if err != nil {
+			log.Println(err)
+		}
+	})
+	if err != nil {
+		log.Println(err)
+	}
+	cronScheduler.Start()
 
 	wg.Wait()
 }
