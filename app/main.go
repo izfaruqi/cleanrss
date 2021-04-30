@@ -15,6 +15,7 @@ import (
 	"cleanrss/provider"
 	providerHttp "cleanrss/provider/delivery/http"
 	providerRepo "cleanrss/provider/repository/sqlite"
+	"cleanrss/static"
 	"time"
 
 	"log"
@@ -49,6 +50,7 @@ func main() {
 		entryHttp.NewEntryHTTPHandler(entryUsecase),
 	)
 	mainServer.Mount("/api/ws", notificationHandler)
+	mainServer.Mount("/", static.NewServeStaticHTTPHandler())
 
 	go func() {
 		err := mainServer.Listen("localhost:1337", &wg)
