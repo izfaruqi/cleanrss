@@ -58,7 +58,7 @@ func main() {
 	}()
 	log.Println("Main server will start on http://localhost:1337")
 
-	_, err = cronScheduler.AddFunc("* * * * *", func() {
+	_, err = cronScheduler.AddFunc("0 * * * *", func() {
 		log.Println("Updating all providers...")
 		err := entryUsecase.TriggerRefreshAll()
 		if err != nil {
