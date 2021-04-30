@@ -1,0 +1,3 @@
+[submodule "cleanrss-webui"]
+	path = cleanrss-webui
+	url = git@github.com:izfaruqi/cleanrss-webui.git
