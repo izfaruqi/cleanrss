@@ -50,6 +50,7 @@ func main() {
 	mainServer.Mount("/api/ws", notificationHandler)
 	mainServer.Mount("/", static.NewServeStaticHTTPHandler())
 
+	go infrastructure.RunSystray()
 	go func() {
 		err := mainServer.Listen("localhost:1337", &wg)
 		if err != nil {
