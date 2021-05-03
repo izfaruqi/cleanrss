@@ -52,17 +52,16 @@ func main() {
 	mainServer.Mount("/api/ws", notificationHandler)
 	mainServer.Mount("/", static.NewServeStaticHTTPHandler())
 
-	condSystray := sync.NewCond(&sync.Mutex{})
+	var waitSystray sync.WaitGroup
 	infoSystray := infrastructure.SystrayInfo{}
-	go infrastructure.RunSystray(&infoSystray, condSystray)
+	waitSystray.Add(1)
+	go infrastructure.RunSystray(&infoSystray, &waitSystray)
 	go func() {
-		condSystray.L.Lock()
-		condSystray.Wait()
+		waitSystray.Wait()
 		infoSystray.SetListeningAddress("localhost:1337")
 		infoSystray.SetOnQuitClicked(func() {
 			mainServerShutdown()
 		})
-		condSystray.L.Unlock()
 		err := mainServer.Listen("localhost:1337", &wg, mainServerShutdownCtx)
 		if err != nil {
 			log.Println(err)

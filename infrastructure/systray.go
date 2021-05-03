@@ -14,8 +14,8 @@ type SystrayInfo struct {
 	onQuit     func()
 }
 
-func RunSystray(info *SystrayInfo, cond *sync.Cond) {
-	systray.Run(info.systrayOnReady(cond), nil)
+func RunSystray(info *SystrayInfo, wait *sync.WaitGroup) {
+	systray.Run(info.systrayOnReady(wait), nil)
 }
 
 func (i *SystrayInfo) SetListeningAddress(addr string) {
@@ -27,11 +27,10 @@ func (i *SystrayInfo) SetOnQuitClicked(onQuit func()) {
 	i.onQuit = onQuit
 }
 
-func (i *SystrayInfo) systrayOnReady(cond *sync.Cond) func() {
+func (i *SystrayInfo) systrayOnReady(wait *sync.WaitGroup) func() {
 	return func() {
-		cond.L.Lock()
-		defer cond.Broadcast()
-		defer cond.L.Unlock()
+		defer wait.Done()
+		log.Println("Systray on ready")
 		systray.SetIcon(icon.Data)
 		systray.SetTitle("CleanRSS")
 		i.mListen = systray.AddMenuItem("Listening on ", "")
