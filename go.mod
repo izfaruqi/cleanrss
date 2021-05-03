@@ -14,6 +14,7 @@ require (
 	github.com/mmcdole/goxpp v0.0.0-20200921145534-2f3784f67354 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
+	github.com/pkg/browser v0.0.0-20210115035449-ce105d075bb4
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/stretchr/testify v1.6.1 // indirect
 	golang.org/x/net v0.0.0-20210316092652-d523dce5a7f4 // indirect

@@ -15,6 +15,7 @@ import (
 	providerHttp "cleanrss/provider/delivery/http"
 	providerRepo "cleanrss/provider/repository/sqlite"
 	"cleanrss/static"
+	"context"
 	"github.com/robfig/cron/v3"
 	"log"
 	"sync"
@@ -22,7 +23,7 @@ import (
 
 func main() {
 	var wg sync.WaitGroup
-	wg.Add(2)
+	wg.Add(1)
 
 	db, err := infrastructure.NewDB()
 	if err != nil {
@@ -32,6 +33,7 @@ func main() {
 
 	httpClient := infrastructure.NewHTTPClient()
 	mainServer := infrastructure.NewHTTPServer()
+	mainServerShutdownCtx, mainServerShutdown := context.WithCancel(context.Background())
 	cronScheduler := cron.New()
 	notificationService, notificationHandler := ws.NewWSNotificationService()
 
@@ -50,9 +52,18 @@ func main() {
 	mainServer.Mount("/api/ws", notificationHandler)
 	mainServer.Mount("/", static.NewServeStaticHTTPHandler())
 
-	go infrastructure.RunSystray()
+	condSystray := sync.NewCond(&sync.Mutex{})
+	infoSystray := infrastructure.SystrayInfo{}
+	go infrastructure.RunSystray(&infoSystray, condSystray)
 	go func() {
-		err := mainServer.Listen("localhost:1337", &wg)
+		condSystray.L.Lock()
+		condSystray.Wait()
+		infoSystray.SetListeningAddress("localhost:1337")
+		infoSystray.SetOnQuitClicked(func() {
+			mainServerShutdown()
+		})
+		condSystray.L.Unlock()
+		err := mainServer.Listen("localhost:1337", &wg, mainServerShutdownCtx)
 		if err != nil {
 			log.Println(err)
 		}
